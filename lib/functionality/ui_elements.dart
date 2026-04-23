@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'dart:ui';
 
 class News {
   Container newNews(String title, Image thumbnail) {
@@ -10,7 +9,7 @@ class News {
         border: Border.all(color: Colors.grey),
         color: Colors.lightBlueAccent,
         borderRadius: BorderRadius.circular(25),
-        boxShadow: const [
+        boxShadow: [
           BoxShadow(
             color: Colors.grey,
             offset: Offset(4.0, 4.0),
@@ -28,7 +27,7 @@ class News {
             left: 20,
             child: Text(
               title,
-              style: const TextStyle(
+              style: TextStyle(
                 color: Colors.white,
                 fontSize: 20,
                 fontWeight: FontWeight.bold,
@@ -51,7 +50,7 @@ class News {
 class Albums {
   Container newAlbum(String title, Image thumbnail) {
     return Container(
-      padding: const EdgeInsets.all(10),
+      padding: EdgeInsets.all(10),
       clipBehavior: Clip.antiAlias,
       height: 120,
       width: 120,
@@ -89,66 +88,75 @@ class Albums {
   }
 }
 
-class SearchBar extends StatefulWidget {
+class KenoSearchBar extends StatelessWidget {
   final Widget child;
-  const SearchBar({super.key, required this.child});
-
-  @override
-  State<SearchBar> createState() => _SearchBarState();
-}
-
-class _SearchBarState extends State<SearchBar> {
-  bool _isSearchVisible = false;
-
-  void toggleSearch() {
-    setState(() {
-      _isSearchVisible = !_isSearchVisible;
-    });
+  const KenoSearchBar({super.key, required this.child});
+  static void open(BuildContext context) {
+    showGeneralDialog(
+      context: context,
+      barrierDismissible: true,
+      barrierLabel: "Dismiss",
+      barrierColor: Colors.black54,
+      transitionDuration: const Duration(milliseconds: 300),
+      pageBuilder: (context, anim1, anim2) {
+        return Align(
+          alignment: Alignment.topCenter,
+          child: Container(
+            width: double.infinity,
+            padding: const EdgeInsets.fromLTRB(20, 50, 20, 20),
+            decoration: const BoxDecoration(
+              color: Colors.transparent,
+              borderRadius: BorderRadius.vertical(bottom: Radius.circular(30)),
+            ),
+            child: Material(
+              // Required for TextField in a Dialog
+              color: Colors.transparent,
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  TextField(
+                    autofocus: true,
+                    decoration: InputDecoration(
+                      filled: true,
+                      fillColor: Colors.grey[100],
+                      hintText: 'Search songs, lyrics...',
+                      prefixIcon: const Icon(Icons.search),
+                      border: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(100),
+                        borderSide: BorderSide.none,
+                      ),
+                    ),
+                  ),
+                  const SizedBox(height: 10),
+                  Container(
+                    width: 40,
+                    height: 5,
+                    decoration: BoxDecoration(
+                      color: Colors.grey[300],
+                      borderRadius: BorderRadius.circular(10),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ),
+        );
+      },
+      transitionBuilder: (context, anim1, anim2, child) {
+        return SlideTransition(
+          position: Tween<Offset>(
+            begin: const Offset(0, -1),
+            end: Offset.zero,
+          ).animate(anim1),
+          child: child,
+        );
+      },
+    );
   }
 
   @override
   Widget build(BuildContext context) {
-    return Stack(
-      children: [
-        GestureDetector(
-          onTap: toggleSearch,
-          child: widget.child,
-        ),
-        if (_isSearchVisible)
-          Positioned.fill(
-            child: BackdropFilter(
-              filter: ImageFilter.blur(sigmaX: 4.0, sigmaY: 4.0),
-              child: Container(
-                decoration: BoxDecoration(
-                  color: Colors.black.withOpacity(0.1),
-                  borderRadius: BorderRadius.circular(25),
-                ),
-              ),
-            ),
-          ),
-        if (_isSearchVisible)
-          Padding(
-            padding: const EdgeInsets.all(16.0),
-            child: TextField(
-              autofocus: true,
-              decoration: InputDecoration(
-                filled: true,
-                fillColor: Colors.white.withAlpha(230),
-                hintText: 'Search',
-                prefixIcon: const Icon(Icons.search),
-                suffixIcon: IconButton(
-                  icon: const Icon(Icons.close),
-                  onPressed: toggleSearch,
-                ),
-                border: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(100),
-                  borderSide: BorderSide.none,
-                ),
-              ),
-            ),
-          ),
-      ],
-    );
+    return GestureDetector(onTap: () => open(context), child: child);
   }
 }
 
