@@ -1,18 +1,20 @@
 import 'package:flutter/material.dart';
+import 'package:kenoverse/functionality/lyrics.dart';
+import 'package:kenoverse/screens/lyric_screen.dart';
 
 class News {
-  Container newNews(String title, Image thumbnail) {
+  Widget newNews(BuildContext context, String title, Image thumbnail) {
     return Container(
-      clipBehavior: Clip.antiAlias, // Required to clip image to borderRadius
+      clipBehavior: Clip.antiAlias,
       height: 200,
       decoration: BoxDecoration(
-        border: Border.all(color: Colors.grey),
-        color: Colors.lightBlueAccent,
+        border: Border.all(color: Theme.of(context).colorScheme.outlineVariant),
+        color: Theme.of(context).colorScheme.secondaryContainer,
         borderRadius: BorderRadius.circular(25),
         boxShadow: [
           BoxShadow(
-            color: Colors.grey,
-            offset: Offset(4.0, 4.0),
+            color: Theme.of(context).colorScheme.shadow.withValues(alpha: 0.2),
+            offset: const Offset(4.0, 4.0),
             blurRadius: 10.0,
             spreadRadius: 1.0,
           ),
@@ -23,8 +25,8 @@ class News {
         children: [
           Image(image: thumbnail.image, fit: BoxFit.cover),
           Positioned(
-            bottom: 20,
-            left: 20,
+            bottom: 10,
+            left: 15,
             child: Text(
               title,
               style: TextStyle(
@@ -48,41 +50,51 @@ class News {
 }
 
 class Albums {
-  Container newAlbum(String title, Image thumbnail) {
-    return Container(
-      padding: EdgeInsets.all(10),
-      clipBehavior: Clip.antiAlias,
-      height: 120,
-      width: 120,
-      decoration: BoxDecoration(
-        border: Border.all(color: Colors.grey),
-        // color: Colors.lightBlueAccent,
-        borderRadius: BorderRadius.circular(5),
-      ),
-      child: Stack(
-        fit: StackFit.expand,
-        children: [
-          Image(image: thumbnail.image, fit: BoxFit.cover),
-          Positioned(
-            bottom: 20,
-            left: 20,
-            child: Text(
+  Widget newAlbum(BuildContext context, Song melody) {
+    String title = melody.title();
+    Image thumbnail = melody.thumbnail()!;
+    return GestureDetector(
+      onTap: () {
+        Navigator.push(
+          context,
+          MaterialPageRoute(
+            builder: (context) => LyricScreen(song: melody),
+          ),
+        );
+      },
+      child: Container(
+        width: 90,
+        margin: const EdgeInsets.symmetric(horizontal: 1),
+        decoration: BoxDecoration(
+          borderRadius: BorderRadius.circular(10),
+        ),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Container(
+              clipBehavior: Clip.antiAlias,
+              height: 90,
+              width: 90,
+              decoration: BoxDecoration(
+                border: Border.all(color: Theme.of(context).colorScheme.outlineVariant),
+                borderRadius: BorderRadius.circular(5),
+              ),
+              child: Image(image: thumbnail.image, fit: BoxFit.cover),
+            ),
+            const SizedBox(height: 1),
+            Text(
               title,
-              style: const TextStyle(
-                color: Colors.white,
-                fontSize: 20,
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+              style: TextStyle(
+                fontSize: 12,
                 fontWeight: FontWeight.bold,
-                shadows: [
-                  Shadow(
-                    blurRadius: 10.0,
-                    color: Colors.black,
-                    offset: Offset(2.0, 2.0),
-                  ),
-                ],
+                color: Theme.of(context).colorScheme.onSurface,
               ),
             ),
-          ),
-        ],
+          ],
+        ),
       ),
     );
   }
@@ -118,12 +130,24 @@ class KenoSearchBar extends StatelessWidget {
                     autofocus: true,
                     decoration: InputDecoration(
                       filled: true,
-                      fillColor: Colors.grey[100],
+                      fillColor: Theme.of(context).colorScheme.surfaceContainerHighest,
                       hintText: 'Search songs, lyrics...',
-                      prefixIcon: const Icon(Icons.search),
+                      prefixIcon: Icon(
+                        Icons.search,
+                        color: Theme.of(context).colorScheme.onSurfaceVariant,
+                      ),
+                      contentPadding: const EdgeInsets.symmetric(horizontal: 20, vertical: 0),
                       border: OutlineInputBorder(
                         borderRadius: BorderRadius.circular(100),
-                        borderSide: BorderSide.none,
+                        borderSide: BorderSide(color: Theme.of(context).colorScheme.outlineVariant),
+                      ),
+                      enabledBorder: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(100),
+                        borderSide: BorderSide(color: Theme.of(context).colorScheme.outlineVariant),
+                      ),
+                      focusedBorder: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(100),
+                        borderSide: BorderSide(color: Theme.of(context).colorScheme.primary, width: 1),
                       ),
                     ),
                   ),
@@ -132,7 +156,7 @@ class KenoSearchBar extends StatelessWidget {
                     width: 40,
                     height: 5,
                     decoration: BoxDecoration(
-                      color: Colors.grey[300],
+                      color: Theme.of(context).colorScheme.outlineVariant,
                       borderRadius: BorderRadius.circular(10),
                     ),
                   ),

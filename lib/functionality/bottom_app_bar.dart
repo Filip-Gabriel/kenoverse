@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:kenoverse/functionality/ui_elements.dart';
-import 'package:kenoverse/screens/new_song.dart';
+import 'package:kenoverse/screens/new_song_screen.dart';
 import 'package:kenoverse/screens/home_screen.dart';
 
 class BottomBar {
@@ -8,8 +8,10 @@ class BottomBar {
     return BottomAppBar(
       height: null,
       padding: EdgeInsets.zero,
-      child: SafeArea(
-        child: Row(
+      child:
+      //SafeArea(
+      //   child:
+      Row(
           mainAxisAlignment: MainAxisAlignment.spaceAround,
           children: [
             IconButton(
@@ -50,7 +52,7 @@ class BottomBar {
             ),
           ],
         ),
-      ),
+      // ),
     );
   }
 }

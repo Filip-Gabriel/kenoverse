@@ -1,56 +1,93 @@
 import 'package:flutter/material.dart';
 
 class Song {
-  late String title;
-  String? lyrics;
-  Image? thumbnail;
+  late String songTitle;
+  String? songLyrics;
+  Image? songThumbnail;
   bool isDraft;
-  String? language;
-  String? album;
-
-  // New fields
-  DateTime? releaseDate;
-  String? featuredArtist;
-  String? youtubeUrl;
-  String? spotifyUrl;
+  String? songLanguage;
+  String? songAlbum;
+  DateTime? songReleaseDate;
+  String? songFeaturedArtist;
+  String? songYoutubeUrl;
+  String? songSpotifyUrl;
 
   Song(
-    this.title, {
+    this.songTitle, {
     this.isDraft = true,
-    this.language,
-    this.album,
-    this.releaseDate,
-    this.featuredArtist,
-    this.youtubeUrl,
-    this.spotifyUrl,
-    this.thumbnail,
-    this.lyrics,
+    this.songLanguage,
+    this.songAlbum,
+    this.songReleaseDate,
+    this.songFeaturedArtist,
+    this.songYoutubeUrl,
+    this.songSpotifyUrl,
+    this.songThumbnail,
+    this.songLyrics,
   });
 
   void addLyrics(String lyrics) {
-    this.lyrics = lyrics;
+    songLyrics = lyrics;
   }
 
   void addThumbnail(Image thumbnail) {
-    this.thumbnail = thumbnail;
+    songThumbnail = thumbnail;
   }
 
   void markAsPublic() {
     isDraft = false;
+  }
+
+  String title() {
+    return songTitle;
+  }
+
+  String? language() {
+    return songLanguage;
+  }
+
+  String? album() {
+    return songAlbum;
+  }
+
+  DateTime? releaseDate() {
+    return songReleaseDate;
+  }
+
+  String? featuredArtist() {
+    return songFeaturedArtist;
+  }
+
+  String? youtubeUrl() {
+    return songYoutubeUrl;
+  }
+
+  String? spotifyUrl() {
+    return songSpotifyUrl;
+  }
+
+  Image? thumbnail() {
+    return songThumbnail;
+  }
+
+  String? lyrics() {
+    return songLyrics;
   }
 }
 
 Song rightfully = Song(
   'Rightfully',
   isDraft: false,
-  language: 'english',
-  album: 'Rightfully (From ”Goblin Slayer”)',
-  releaseDate: DateTime(2018, 12, 15),
-  featuredArtist: 'IDN/A',
-  youtubeUrl: 'https://youtu.be/-7BmO8Ocdi8',
-  spotifyUrl: 'https://open.spotify.com/track/1PPd67Amh9LXCR2u3dS5gk?si=1226d7cfac2f4dec',
-  thumbnail: Image.network('https://i.scdn.co/image/ab67616d0000b27339f55d313059289288f1c0fc'),
-  lyrics: r'''[Verse 1]
+  songLanguage: 'english',
+  songAlbum: 'Rightfully (From ”Goblin Slayer”)',
+  songReleaseDate: DateTime(2018, 12, 15),
+  songFeaturedArtist: 'IDN/A',
+  songYoutubeUrl: 'https://youtu.be/-7BmO8Ocdi8',
+  songSpotifyUrl:
+      'https://open.spotify.com/track/1PPd67Amh9LXCR2u3dS5gk?si=1226d7cfac2f4dec',
+  songThumbnail: Image.network(
+    'https://i.scdn.co/image/ab67616d0000b27339f55d313059289288f1c0fc',
+  ),
+  songLyrics: r'''[Verse 1]
 Chained onto me
 My adolescent dreams
 Pulling, dragged me deep

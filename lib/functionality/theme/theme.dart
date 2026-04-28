@@ -1,12 +1,13 @@
 import 'package:flutter/material.dart';
+import 'package:kenoverse/functionality/theme/app_theme.dart';
 
 class CustomTheme {
   static ThemeData darkTheme() {
-    return ThemeData.dark();
+    return AppTheme.darkTheme;
   }
 
   static ThemeData lightTheme() {
-    return ThemeData.light();
+    return AppTheme.lightTheme;
   }
 
   static ThemeData customTheme() {
