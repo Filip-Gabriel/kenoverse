@@ -3,6 +3,11 @@ import 'package:kenoverse/screens/lyric_screen.dart';
 import 'package:kenoverse/functionality/bottom_app_bar.dart';
 import 'package:kenoverse/functionality/ui_elements.dart';
 import 'package:kenoverse/functionality/lyrics.dart';
+import 'package:kenoverse/functionality/auth_service.dart';
+import 'package:kenoverse/functionality/firestore_service.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:kenoverse/screens/login_screen.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
@@ -52,12 +57,46 @@ class _HomeScreenState extends State<HomeScreen> {
                         ),
                       ],
                     ),
-                    CircleAvatar(
-                      radius: 24,
-                      backgroundColor: Theme.of(context).colorScheme.primaryContainer,
-                      child: Icon(
-                        Icons.person_outline,
-                        color: Theme.of(context).colorScheme.onPrimaryContainer,
+                    GestureDetector(
+                      onTap: () async {
+                        User? user = FirebaseAuth.instance.currentUser;
+                        if (user == null) {
+                          Navigator.push(
+                            context,
+                            MaterialPageRoute(builder: (context) => const LoginScreen()),
+                          );
+                        } else {
+                          // Show logout confirmation
+                          showDialog(
+                            context: context,
+                            builder: (context) => AlertDialog(
+                              title: const Text('Account'),
+                              content: Text('Logged in as ${user.email}'),
+                              actions: [
+                                TextButton(
+                                  onPressed: () => Navigator.pop(context),
+                                  child: const Text('Close'),
+                                ),
+                                TextButton(
+                                  onPressed: () async {
+                                    await AuthService().signOut();
+                                    if (context.mounted) Navigator.pop(context);
+                                    setState(() {}); // Refresh to show logged out state
+                                  },
+                                  child: const Text('Sign Out', style: TextStyle(color: Colors.red)),
+                                ),
+                              ],
+                            ),
+                          );
+                        }
+                      },
+                      child: CircleAvatar(
+                        radius: 24,
+                        backgroundColor: Theme.of(context).colorScheme.primaryContainer,
+                        child: Icon(
+                          FirebaseAuth.instance.currentUser == null ? Icons.login : Icons.person_outline,
+                          color: Theme.of(context).colorScheme.onPrimaryContainer,
+                        ),
                       ),
                     ),
                   ],
@@ -109,16 +148,31 @@ class _HomeScreenState extends State<HomeScreen> {
                     const SizedBox(height: 16),
                     SizedBox(
                       height: 140,
-                      child: ListView(
-                        scrollDirection: Axis.horizontal,
-                        padding: const EdgeInsets.symmetric(horizontal: 20),
-                        children: [
-                          Albums().newAlbum(context, rightfully),
-                          Albums().newAlbum(context, rightfully),
-                          Albums().newAlbum(context, rightfully),
-                          Albums().newAlbum(context, rightfully),
-                          Albums().newAlbum(context, rightfully),
-                        ],
+                      child: StreamBuilder<QuerySnapshot>(
+                        stream: FirestoreService().songs,
+                        builder: (context, snapshot) {
+                          if (snapshot.connectionState == ConnectionState.waiting) {
+                            return const Center(child: CircularProgressIndicator());
+                          }
+                          if (!snapshot.hasData || snapshot.data!.docs.isEmpty) {
+                            return Center(
+                              child: Text(
+                                'No songs found',
+                                style: TextStyle(color: Theme.of(context).colorScheme.secondary),
+                              ),
+                            );
+                          }
+                          var docs = snapshot.data!.docs;
+                          return ListView.builder(
+                            scrollDirection: Axis.horizontal,
+                            padding: const EdgeInsets.symmetric(horizontal: 20),
+                            itemCount: docs.length,
+                            itemBuilder: (context, index) {
+                              Song song = Song.fromFirestore(docs[index].data() as Map<String, dynamic>);
+                              return Albums().newAlbum(context, song);
+                            },
+                          );
+                        },
                       ),
                     ),
                     
@@ -135,9 +189,24 @@ class _HomeScreenState extends State<HomeScreen> {
                       ),
                     ),
                     const SizedBox(height: 12),
-                    _buildRecentSongTile(context, rightfully),
-                    _buildRecentSongTile(context, rightfully),
-                    _buildRecentSongTile(context, rightfully),
+                    StreamBuilder<QuerySnapshot>(
+                      stream: FirestoreService().recentSongs,
+                      builder: (context, snapshot) {
+                        if (snapshot.connectionState == ConnectionState.waiting) {
+                          return const SizedBox();
+                        }
+                        if (!snapshot.hasData || snapshot.data!.docs.isEmpty) {
+                          return const SizedBox();
+                        }
+                        var docs = snapshot.data!.docs;
+                        return Column(
+                          children: docs.map((doc) {
+                            Song song = Song.fromFirestore(doc.data() as Map<String, dynamic>);
+                            return _buildRecentSongTile(context, song);
+                          }).toList(),
+                        );
+                      },
+                    ),
                   ],
                 ),
               ),

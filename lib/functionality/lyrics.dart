@@ -25,6 +25,23 @@ class Song {
     this.songLyrics,
   });
 
+  factory Song.fromFirestore(Map<String, dynamic> data) {
+    return Song(
+      data['title'] ?? 'Unknown Title',
+      isDraft: false,
+      songLanguage: data['language'],
+      songAlbum: data['album'],
+      songReleaseDate: data['releaseDate'] != null ? (data['releaseDate'] as dynamic).toDate() : null,
+      songFeaturedArtist: data['artist'],
+      songYoutubeUrl: data['youtubeUrl'],
+      songSpotifyUrl: data['spotifyUrl'],
+      songLyrics: data['lyrics'],
+      songThumbnail: data['thumbnailUrl'] != null 
+        ? Image.network(data['thumbnailUrl']) 
+        : Image.asset('images/callofsilence.jpg'), // Default placeholder
+    );
+  }
+
   void addLyrics(String lyrics) {
     songLyrics = lyrics;
   }

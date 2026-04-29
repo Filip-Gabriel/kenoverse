@@ -3,6 +3,8 @@ import 'package:kenoverse/functionality/lyrics.dart';
 import 'package:image_picker/image_picker.dart';
 import 'dart:io';
 import 'package:intl/intl.dart';
+import 'package:kenoverse/functionality/firestore_service.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
 
 class NewSong extends StatefulWidget {
   const NewSong({super.key});
@@ -11,6 +13,7 @@ class NewSong extends StatefulWidget {
 }
 
 class _NewSongState extends State<NewSong> {
+  final FirestoreService _firestoreService = FirestoreService();
   static const List<String> _knownArtists = <String>[
     'シロネコ', 'Keno', 'Hatsune Miku', 'Megurine Luka', 'Kagamine Rin', 'Kagamine Len',
   ];
@@ -68,6 +71,20 @@ class _NewSongState extends State<NewSong> {
     newSong.addLyrics(_lyricsController.text);
     if (_selectedImage != null) {
       newSong.addThumbnail(Image.file(_selectedImage!));
+    }
+
+    if (!asDraft) {
+      _firestoreService.addSong({
+        'title': _titleController.text,
+        'lyrics': _lyricsController.text,
+        'album': _albumController.text,
+        'artist': _artistController.text,
+        'language': _languageController.text,
+        'releaseDate': _selectedDate != null ? Timestamp.fromDate(_selectedDate!) : null,
+        'youtubeUrl': _youtubeController.text,
+        'spotifyUrl': _spotifyController.text,
+        'timestamp': FieldValue.serverTimestamp(),
+      });
     }
 
     ScaffoldMessenger.of(context).showSnackBar(

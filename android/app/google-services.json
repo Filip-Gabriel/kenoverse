@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "660026182554",
+    "project_id": "kenoverse-8f206",
+    "storage_bucket": "kenoverse-8f206.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:660026182554:android:1dfdb3c30b49a7b3b4c823",
+        "android_client_info": {
+          "package_name": "com.monarch.kenoverse"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyBfYEOj7TIBlm-XayJ-lv5NInCu8WgNB3E"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
