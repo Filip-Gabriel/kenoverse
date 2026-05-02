@@ -1,10 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:kenoverse/functionality/lyrics.dart';
-import 'package:image_picker/image_picker.dart';
-import 'dart:io';
 import 'package:intl/intl.dart';
 import 'package:kenoverse/functionality/firestore_service.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:kenoverse/functionality/theme/theme_extensions.dart';
 
 class NewSong extends StatefulWidget {
   const NewSong({super.key});
@@ -14,28 +13,25 @@ class NewSong extends StatefulWidget {
 
 class _NewSongState extends State<NewSong> {
   final FirestoreService _firestoreService = FirestoreService();
-  static const List<String> _knownArtists = <String>[
-    'シロネコ', 'Keno', 'Hatsune Miku', 'Megurine Luka', 'Kagamine Rin', 'Kagamine Len',
-  ];
 
   final TextEditingController _titleController = TextEditingController();
   final TextEditingController _lyricsController = TextEditingController();
-  final TextEditingController _artistController = TextEditingController();
   final TextEditingController _youtubeController = TextEditingController();
   final TextEditingController _spotifyController = TextEditingController();
   final TextEditingController _languageController = TextEditingController();
   final TextEditingController _albumController = TextEditingController();
+  final TextEditingController _thumbnailController = TextEditingController();
+
+  // Multi-artist controllers
+  final TextEditingController _originalArtistController = TextEditingController();
+  final TextEditingController _vocalsController = TextEditingController();
+  final TextEditingController _featuredArtistController = TextEditingController();
+  final TextEditingController _audioController = TextEditingController();
+  final TextEditingController _arrangementController = TextEditingController();
+  final TextEditingController _artworkController = TextEditingController();
+  final TextEditingController _videoController = TextEditingController();
 
   DateTime? _selectedDate;
-  File? _selectedImage;
-  final ImagePicker _picker = ImagePicker();
-
-  Future<void> _pickImage() async {
-    final XFile? image = await _picker.pickImage(source: ImageSource.gallery);
-    if (image != null) {
-      setState(() => _selectedImage = File(image.path));
-    }
-  }
 
   Future<void> _selectDate(BuildContext context) async {
     final DateTime? picked = await showDatePicker(
@@ -49,6 +45,11 @@ class _NewSongState extends State<NewSong> {
     }
   }
 
+  List<String> _parseArtists(String text) {
+    if (text.isEmpty) return [];
+    return text.split(',').map((s) => s.trim()).where((s) => s.isNotEmpty).toList();
+  }
+
   void _processSong({required bool asDraft}) {
     if (_titleController.text.isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
@@ -57,32 +58,23 @@ class _NewSongState extends State<NewSong> {
       return;
     }
 
-    Song newSong = Song(
-      _titleController.text,
-      isDraft: asDraft,
-      songLanguage: _languageController.text.isEmpty ? null : _languageController.text,
-      songAlbum: _albumController.text.isEmpty ? null : _albumController.text,
-      songReleaseDate: _selectedDate,
-      songFeaturedArtist: _artistController.text.isEmpty ? null : _artistController.text,
-      songYoutubeUrl: _youtubeController.text.isEmpty ? null : _youtubeController.text,
-      songSpotifyUrl: _spotifyController.text.isEmpty ? null : _spotifyController.text,
-    );
-    
-    newSong.addLyrics(_lyricsController.text);
-    if (_selectedImage != null) {
-      newSong.addThumbnail(Image.file(_selectedImage!));
-    }
-
     if (!asDraft) {
       _firestoreService.addSong({
         'title': _titleController.text,
         'lyrics': _lyricsController.text,
         'album': _albumController.text,
-        'artist': _artistController.text,
         'language': _languageController.text,
         'releaseDate': _selectedDate != null ? Timestamp.fromDate(_selectedDate!) : null,
         'youtubeUrl': _youtubeController.text,
         'spotifyUrl': _spotifyController.text,
+        'thumbnailUrl': _thumbnailController.text.isEmpty ? null : _thumbnailController.text,
+        'originalArtists': _parseArtists(_originalArtistController.text),
+        'vocals': _parseArtists(_vocalsController.text),
+        'featuredArtists': _parseArtists(_featuredArtistController.text),
+        'audioPreedit': _parseArtists(_audioController.text),
+        'arrangement': _parseArtists(_arrangementController.text),
+        'artworkBy': _parseArtists(_artworkController.text),
+        'videoBy': _parseArtists(_videoController.text),
         'timestamp': FieldValue.serverTimestamp(),
       });
     }
@@ -90,7 +82,7 @@ class _NewSongState extends State<NewSong> {
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
         content: Text(asDraft ? 'Draft saved locally' : 'Song uploaded successfully!'),
-        backgroundColor: asDraft ? null : Theme.of(context).colorScheme.primary,
+        backgroundColor: asDraft ? null : context.colorScheme.primary,
         behavior: SnackBarBehavior.floating,
       ),
     );
@@ -103,12 +95,12 @@ class _NewSongState extends State<NewSong> {
       padding: const EdgeInsets.only(top: 24, bottom: 12),
       child: Row(
         children: [
-          Icon(icon, size: 18, color: Theme.of(context).colorScheme.primary),
-          const SizedBox(width: 8),
+          Icon(icon, size: 18, color: context.colorScheme.primary),
+          context.gapSM,
           Text(
             title.toUpperCase(),
-            style: Theme.of(context).textTheme.labelLarge?.copyWith(
-              color: Theme.of(context).colorScheme.primary,
+            style: context.textTheme.labelLarge?.copyWith(
+              color: context.colorScheme.primary,
               fontWeight: FontWeight.bold,
               letterSpacing: 1.2,
             ),
@@ -118,23 +110,24 @@ class _NewSongState extends State<NewSong> {
     );
   }
 
-  InputDecoration _inputDecoration(String label, {IconData? prefixIcon}) {
+  InputDecoration _inputDecoration(String label, {IconData? prefixIcon, String? hint}) {
     return InputDecoration(
       labelText: label,
+      hintText: hint,
       prefixIcon: prefixIcon != null ? Icon(prefixIcon) : null,
       filled: true,
-      fillColor: Theme.of(context).colorScheme.surfaceContainerHighest.withValues(alpha: 0.3),
+      fillColor: context.colorScheme.surfaceContainerHighest.withValues(alpha: 0.3),
       border: OutlineInputBorder(
-        borderRadius: BorderRadius.circular(12),
+        borderRadius: context.radiusMD,
         borderSide: BorderSide.none,
       ),
       enabledBorder: OutlineInputBorder(
-        borderRadius: BorderRadius.circular(12),
+        borderRadius: context.radiusMD,
         borderSide: BorderSide.none,
       ),
       focusedBorder: OutlineInputBorder(
-        borderRadius: BorderRadius.circular(12),
-        borderSide: BorderSide(color: Theme.of(context).colorScheme.primary, width: 2),
+        borderRadius: context.radiusMD,
+        borderSide: BorderSide(color: context.colorScheme.primary, width: 2),
       ),
       contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
     );
@@ -152,38 +145,53 @@ class _NewSongState extends State<NewSong> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            // Image Picker Section
+            // Image URL Section
             Center(
-              child: GestureDetector(
-                onTap: _pickImage,
-                child: Container(
-                  height: 200,
-                  width: 200,
-                  decoration: BoxDecoration(
-                    color: Theme.of(context).colorScheme.surfaceContainer,
-                    borderRadius: BorderRadius.circular(20),
-                    boxShadow: [
-                      BoxShadow(
-                        color: Colors.black.withValues(alpha: 0.1),
-                        blurRadius: 10,
-                        offset: const Offset(0, 4),
-                      ),
-                    ],
-                    image: _selectedImage != null
-                        ? DecorationImage(image: FileImage(_selectedImage!), fit: BoxFit.cover)
-                        : null,
+              child: Column(
+                children: [
+                  Container(
+                    height: 200,
+                    width: 200,
+                    decoration: BoxDecoration(
+                      color: context.colorScheme.surfaceContainer,
+                      borderRadius: context.radiusXL,
+                      boxShadow: [
+                        BoxShadow(
+                          color: Colors.black.withValues(alpha: 0.1),
+                          blurRadius: 10,
+                          offset: const Offset(0, 4),
+                        ),
+                      ],
+                    ),
+                    child: _thumbnailController.text.isNotEmpty
+                        ? ClipRRect(
+                            borderRadius: context.radiusXL,
+                            child: Image.network(
+                              _thumbnailController.text,
+                              fit: BoxFit.cover,
+                              errorBuilder: (context, error, stackTrace) => Icon(
+                                Icons.broken_image_outlined,
+                                size: 40,
+                                color: context.colorScheme.error,
+                              ),
+                            ),
+                          )
+                        : Column(
+                            mainAxisAlignment: MainAxisAlignment.center,
+                            children: [
+                              Icon(Icons.image_outlined, size: 40, color: context.colorScheme.primary),
+                              context.gapSM,
+                              Text('Image Preview', style: TextStyle(color: context.colorScheme.primary)),
+                            ],
+                          ),
                   ),
-                  child: _selectedImage == null
-                      ? Column(
-                          mainAxisAlignment: MainAxisAlignment.center,
-                          children: [
-                            Icon(Icons.add_a_photo_outlined, size: 40, color: Theme.of(context).colorScheme.primary),
-                            const SizedBox(height: 8),
-                            Text('Add Artwork', style: TextStyle(color: Theme.of(context).colorScheme.primary)),
-                          ],
-                        )
-                      : null,
-                ),
+                  context.gapMD,
+                  TextField(
+                    controller: _thumbnailController,
+                    onChanged: (value) => setState(() {}),
+                    decoration: _inputDecoration('Artwork URL', prefixIcon: Icons.link),
+                  ),
+                ],
               ),
             ),
 
@@ -192,11 +200,47 @@ class _NewSongState extends State<NewSong> {
               controller: _titleController,
               decoration: _inputDecoration('Song Title'),
             ),
-            const SizedBox(height: 16),
+            context.gapMD,
             TextField(
               controller: _lyricsController,
               maxLines: 8,
               decoration: _inputDecoration('Lyrics'),
+            ),
+
+            _buildSectionHeader('Artists & Credits', Icons.people_outline),
+            TextField(
+              controller: _originalArtistController,
+              decoration: _inputDecoration('Original Artist(s)', hint: 'Separate with commas'),
+            ),
+            context.gapMD,
+            TextField(
+              controller: _vocalsController,
+              decoration: _inputDecoration('Vocal(s)', hint: 'Separate with commas'),
+            ),
+            context.gapMD,
+            TextField(
+              controller: _featuredArtistController,
+              decoration: _inputDecoration('Featured Artist(s)', hint: 'Separate with commas'),
+            ),
+            context.gapMD,
+            TextField(
+              controller: _audioController,
+              decoration: _inputDecoration('Audio/Mixing', hint: 'Separate with commas'),
+            ),
+            context.gapMD,
+            TextField(
+              controller: _arrangementController,
+              decoration: _inputDecoration('Arrangement', hint: 'Separate with commas'),
+            ),
+            context.gapMD,
+            TextField(
+              controller: _artworkController,
+              decoration: _inputDecoration('Artwork By', hint: 'Separate with commas'),
+            ),
+            context.gapMD,
+            TextField(
+              controller: _videoController,
+              decoration: _inputDecoration('Video By', hint: 'Separate with commas'),
             ),
 
             _buildSectionHeader('Metadata', Icons.settings_outlined),
@@ -204,26 +248,7 @@ class _NewSongState extends State<NewSong> {
               controller: _albumController,
               decoration: _inputDecoration('Album Name', prefixIcon: Icons.album),
             ),
-            const SizedBox(height: 16),
-            Autocomplete<String>(
-              optionsBuilder: (TextEditingValue textEditingValue) {
-                if (textEditingValue.text == '') return const Iterable<String>.empty();
-                return _knownArtists.where((option) => option.toLowerCase().contains(textEditingValue.text.toLowerCase()));
-              },
-              onSelected: (selection) => _artistController.text = selection,
-              fieldViewBuilder: (context, controller, focusNode, onFieldSubmitted) {
-                if (controller.text != _artistController.text && _artistController.text.isNotEmpty) {
-                  controller.text = _artistController.text;
-                }
-                return TextField(
-                  controller: controller,
-                  focusNode: focusNode,
-                  onChanged: (val) => _artistController.text = val,
-                  decoration: _inputDecoration('Featured Artist', prefixIcon: Icons.person_outline),
-                );
-              },
-            ),
-            const SizedBox(height: 16),
+            context.gapMD,
             Row(
               children: [
                 Expanded(
@@ -232,7 +257,7 @@ class _NewSongState extends State<NewSong> {
                     decoration: _inputDecoration('Language'),
                   ),
                 ),
-                const SizedBox(width: 16),
+                context.gapMD,
                 Expanded(
                   child: InkWell(
                     onTap: () => _selectDate(context),
@@ -253,13 +278,13 @@ class _NewSongState extends State<NewSong> {
               controller: _youtubeController,
               decoration: _inputDecoration('YouTube URL', prefixIcon: Icons.play_circle_fill),
             ),
-            const SizedBox(height: 16),
+            context.gapMD,
             TextField(
               controller: _spotifyController,
               decoration: _inputDecoration('Spotify URL', prefixIcon: Icons.library_music),
             ),
 
-            const SizedBox(height: 40),
+            context.gapXXL,
             Row(
               children: [
                 Expanded(
@@ -267,25 +292,25 @@ class _NewSongState extends State<NewSong> {
                     onPressed: () => _processSong(asDraft: true),
                     style: OutlinedButton.styleFrom(
                       padding: const EdgeInsets.symmetric(vertical: 16),
-                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                      shape: RoundedRectangleBorder(borderRadius: context.radiusMD),
                     ),
                     child: const Text('Save Draft'),
                   ),
                 ),
-                const SizedBox(width: 16),
+                context.gapMD,
                 Expanded(
                   child: FilledButton(
                     onPressed: () => _processSong(asDraft: false),
                     style: FilledButton.styleFrom(
                       padding: const EdgeInsets.symmetric(vertical: 16),
-                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                      shape: RoundedRectangleBorder(borderRadius: context.radiusMD),
                     ),
                     child: const Text('Post Song'),
                   ),
                 ),
               ],
             ),
-            const SizedBox(height: 20),
+            context.gapLG,
           ],
         ),
       ),

@@ -8,6 +8,7 @@ import 'package:kenoverse/functionality/firestore_service.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:kenoverse/screens/login_screen.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:kenoverse/functionality/theme/theme_extensions.dart';
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
@@ -44,15 +45,15 @@ class _HomeScreenState extends State<HomeScreen> {
                       children: [
                         Text(
                           _getGreeting(),
-                          style: Theme.of(context).textTheme.bodyLarge?.copyWith(
-                                color: Theme.of(context).colorScheme.secondary,
+                          style: context.textTheme.bodyLarge?.copyWith(
+                                color: context.colorScheme.secondary,
                               ),
                         ),
                         Text(
                           'Keno',
-                          style: Theme.of(context).textTheme.headlineMedium?.copyWith(
+                          style: context.textTheme.headlineMedium?.copyWith(
                                 fontWeight: FontWeight.bold,
-                                color: Theme.of(context).colorScheme.onSurface,
+                                color: context.colorScheme.onSurface,
                               ),
                         ),
                       ],
@@ -92,10 +93,10 @@ class _HomeScreenState extends State<HomeScreen> {
                       },
                       child: CircleAvatar(
                         radius: 24,
-                        backgroundColor: Theme.of(context).colorScheme.primaryContainer,
+                        backgroundColor: context.colorScheme.primaryContainer,
                         child: Icon(
                           FirebaseAuth.instance.currentUser == null ? Icons.login : Icons.person_outline,
-                          color: Theme.of(context).colorScheme.onPrimaryContainer,
+                          color: context.colorScheme.onPrimaryContainer,
                         ),
                       ),
                     ),
@@ -105,7 +106,7 @@ class _HomeScreenState extends State<HomeScreen> {
 
               // 2. Featured/Hero News Section (Search Trigger)
               Padding(
-                padding: const EdgeInsets.all(20.0),
+                padding: context.paddingLG,
                 child: KenoSearchBar(
                   child: News().newNews(
                     context,
@@ -120,7 +121,7 @@ class _HomeScreenState extends State<HomeScreen> {
                 width: double.infinity,
                 padding: const EdgeInsets.symmetric(vertical: 20),
                 decoration: BoxDecoration(
-                  color: Theme.of(context).colorScheme.surfaceContainer,
+                  color: context.colorScheme.surfaceContainer,
                   borderRadius: const BorderRadius.vertical(top: Radius.circular(30)),
                 ),
                 child: Column(
@@ -133,19 +134,19 @@ class _HomeScreenState extends State<HomeScreen> {
                         children: [
                           Text(
                             'Albums',
-                            style: Theme.of(context).textTheme.titleLarge?.copyWith(
+                            style: context.textTheme.titleLarge?.copyWith(
                                   fontWeight: FontWeight.bold,
                                 ),
                           ),
                           Icon(
                             Icons.arrow_forward,
                             size: 20,
-                            color: Theme.of(context).colorScheme.secondary,
+                            color: context.colorScheme.secondary,
                           ),
                         ],
                       ),
                     ),
-                    const SizedBox(height: 16),
+                    context.gapMD,
                     SizedBox(
                       height: 140,
                       child: StreamBuilder<QuerySnapshot>(
@@ -158,7 +159,7 @@ class _HomeScreenState extends State<HomeScreen> {
                             return Center(
                               child: Text(
                                 'No songs found',
-                                style: TextStyle(color: Theme.of(context).colorScheme.secondary),
+                                style: TextStyle(color: context.colorScheme.secondary),
                               ),
                             );
                           }
@@ -176,19 +177,19 @@ class _HomeScreenState extends State<HomeScreen> {
                       ),
                     ),
                     
-                    const SizedBox(height: 24),
+                    context.gapLG,
                     
                     // 4. Recent Songs List
                     Padding(
                       padding: const EdgeInsets.symmetric(horizontal: 25.0),
                       child: Text(
                         'Recent Releases',
-                        style: Theme.of(context).textTheme.titleLarge?.copyWith(
+                        style: context.textTheme.titleLarge?.copyWith(
                               fontWeight: FontWeight.bold,
                             ),
                       ),
                     ),
-                    const SizedBox(height: 12),
+                    context.gapSM,
                     StreamBuilder<QuerySnapshot>(
                       stream: FirestoreService().recentSongs,
                       builder: (context, snapshot) {
@@ -230,18 +231,18 @@ class _HomeScreenState extends State<HomeScreen> {
             ),
           );
         },
-        borderRadius: BorderRadius.circular(16),
+        borderRadius: context.radiusLG,
         child: Container(
-          padding: const EdgeInsets.all(12),
+          padding: context.paddingMD,
           decoration: BoxDecoration(
-            color: Theme.of(context).colorScheme.surface,
-            borderRadius: BorderRadius.circular(16),
-            border: Border.all(color: Theme.of(context).colorScheme.outlineVariant.withValues(alpha: 0.5)),
+            color: context.colorScheme.surface,
+            borderRadius: context.radiusLG,
+            border: Border.all(color: context.colorScheme.outlineVariant.withValues(alpha: 0.5)),
           ),
           child: Row(
             children: [
               ClipRRect(
-                borderRadius: BorderRadius.circular(12),
+                borderRadius: context.radiusMD,
                 child: Image(
                   image: song.thumbnail()!.image,
                   height: 56,
@@ -249,21 +250,21 @@ class _HomeScreenState extends State<HomeScreen> {
                   fit: BoxFit.cover,
                 ),
               ),
-              const SizedBox(width: 16),
+              context.gapMD,
               Expanded(
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(
                       song.title(),
-                      style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                      style: context.textTheme.titleMedium?.copyWith(
                             fontWeight: FontWeight.bold,
                           ),
                     ),
                     Text(
                       song.album() ?? 'Single',
-                      style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                            color: Theme.of(context).colorScheme.secondary,
+                      style: context.textTheme.bodySmall?.copyWith(
+                            color: context.colorScheme.secondary,
                           ),
                     ),
                   ],
@@ -271,7 +272,7 @@ class _HomeScreenState extends State<HomeScreen> {
               ),
               Icon(
                 Icons.more_vert,
-                color: Theme.of(context).colorScheme.onSurfaceVariant,
+                color: context.colorScheme.onSurfaceVariant,
               ),
             ],
           ),

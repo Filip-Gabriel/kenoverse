@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:kenoverse/functionality/lyrics.dart';
 import 'package:kenoverse/screens/lyric_screen.dart';
+import 'package:kenoverse/functionality/theme/theme_extensions.dart';
 
 class News {
   Widget newNews(BuildContext context, String title, Image thumbnail) {
@@ -8,12 +9,12 @@ class News {
       clipBehavior: Clip.antiAlias,
       height: 200,
       decoration: BoxDecoration(
-        border: Border.all(color: Theme.of(context).colorScheme.outlineVariant),
-        color: Theme.of(context).colorScheme.secondaryContainer,
-        borderRadius: BorderRadius.circular(25),
+        border: Border.all(color: context.colorScheme.outlineVariant),
+        color: context.colorScheme.secondaryContainer,
+        borderRadius: context.radiusXL,
         boxShadow: [
           BoxShadow(
-            color: Theme.of(context).colorScheme.shadow.withValues(alpha: 0.2),
+            color: context.colorScheme.shadow.withValues(alpha: 0.2),
             offset: const Offset(4.0, 4.0),
             blurRadius: 10.0,
             spreadRadius: 1.0,
@@ -29,7 +30,7 @@ class News {
             left: 15,
             child: Text(
               title,
-              style: TextStyle(
+              style: const TextStyle(
                 color: Colors.white,
                 fontSize: 20,
                 fontWeight: FontWeight.bold,
@@ -57,8 +58,25 @@ class Albums {
       onTap: () {
         Navigator.push(
           context,
-          MaterialPageRoute(
-            builder: (context) => LyricScreen(song: melody),
+          PageRouteBuilder(
+            pageBuilder: (context, animation, secondaryAnimation) => LyricScreen(song: melody),
+            transitionsBuilder: (context, animation, secondaryAnimation, child) {
+              const begin = Offset(0.0, 0.05);
+              const end = Offset.zero;
+              const curve = Curves.easeOutCubic;
+
+              var slideTween = Tween(begin: begin, end: end).chain(CurveTween(curve: curve));
+              var fadeTween = Tween<double>(begin: 0.0, end: 1.0).chain(CurveTween(curve: curve));
+
+              return FadeTransition(
+                opacity: animation.drive(fadeTween),
+                child: SlideTransition(
+                  position: animation.drive(slideTween),
+                  child: child,
+                ),
+              );
+            },
+            transitionDuration: const Duration(milliseconds: 500),
           ),
         );
       },
@@ -66,7 +84,7 @@ class Albums {
         width: 90,
         margin: const EdgeInsets.symmetric(horizontal: 1),
         decoration: BoxDecoration(
-          borderRadius: BorderRadius.circular(10),
+          borderRadius: context.radiusSM,
         ),
         child: Column(
           mainAxisSize: MainAxisSize.min,
@@ -77,10 +95,13 @@ class Albums {
               height: 90,
               width: 90,
               decoration: BoxDecoration(
-                border: Border.all(color: Theme.of(context).colorScheme.outlineVariant),
-                borderRadius: BorderRadius.circular(5),
+                border: Border.all(color: context.colorScheme.outlineVariant),
+                borderRadius: context.radiusXS,
               ),
-              child: Image(image: thumbnail.image, fit: BoxFit.cover),
+              child: Hero(
+                tag: 'song-art-${melody.title()}',
+                child: Image(image: thumbnail.image, fit: BoxFit.cover),
+              ),
             ),
             const SizedBox(height: 1),
             Text(
@@ -90,7 +111,7 @@ class Albums {
               style: TextStyle(
                 fontSize: 12,
                 fontWeight: FontWeight.bold,
-                color: Theme.of(context).colorScheme.onSurface,
+                color: context.colorScheme.onSurface,
               ),
             ),
           ],
@@ -130,34 +151,34 @@ class KenoSearchBar extends StatelessWidget {
                     autofocus: true,
                     decoration: InputDecoration(
                       filled: true,
-                      fillColor: Theme.of(context).colorScheme.surfaceContainerHighest,
+                      fillColor: context.colorScheme.surfaceContainerHighest,
                       hintText: 'Search songs, lyrics...',
                       prefixIcon: Icon(
                         Icons.search,
-                        color: Theme.of(context).colorScheme.onSurfaceVariant,
+                        color: context.colorScheme.onSurfaceVariant,
                       ),
                       contentPadding: const EdgeInsets.symmetric(horizontal: 20, vertical: 0),
                       border: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(100),
-                        borderSide: BorderSide(color: Theme.of(context).colorScheme.outlineVariant),
+                        borderRadius: context.radiusFull,
+                        borderSide: BorderSide(color: context.colorScheme.outlineVariant),
                       ),
                       enabledBorder: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(100),
-                        borderSide: BorderSide(color: Theme.of(context).colorScheme.outlineVariant),
+                        borderRadius: context.radiusFull,
+                        borderSide: BorderSide(color: context.colorScheme.outlineVariant),
                       ),
                       focusedBorder: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(100),
-                        borderSide: BorderSide(color: Theme.of(context).colorScheme.primary, width: 1),
+                        borderRadius: context.radiusFull,
+                        borderSide: BorderSide(color: context.colorScheme.primary, width: 1),
                       ),
                     ),
                   ),
-                  const SizedBox(height: 10),
+                  context.gapSM,
                   Container(
                     width: 40,
                     height: 5,
                     decoration: BoxDecoration(
-                      color: Theme.of(context).colorScheme.outlineVariant,
-                      borderRadius: BorderRadius.circular(10),
+                      color: context.colorScheme.outlineVariant,
+                      borderRadius: context.radiusMD,
                     ),
                   ),
                 ],

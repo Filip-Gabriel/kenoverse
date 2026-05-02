@@ -7,6 +7,7 @@
 /// - Spacing: SizedBox(height: AppConstants.spacingMD)
 /// - Border Radius: BorderRadius.circular(AppConstants.radiusLG)
 /// - Animation: AnimationController(duration: AppConstants.durationNormal)
+library;
 
 import 'package:flutter/material.dart';
 

@@ -8,9 +8,17 @@ class Song {
   String? songLanguage;
   String? songAlbum;
   DateTime? songReleaseDate;
-  String? songFeaturedArtist;
   String? songYoutubeUrl;
   String? songSpotifyUrl;
+
+  // Multi-artist fields
+  List<String> originalArtists;
+  List<String> vocals;
+  List<String> featuredArtists;
+  List<String> audioPreedit;
+  List<String> arrangement;
+  List<String> artworkBy;
+  List<String> videoBy;
 
   Song(
     this.songTitle, {
@@ -18,11 +26,17 @@ class Song {
     this.songLanguage,
     this.songAlbum,
     this.songReleaseDate,
-    this.songFeaturedArtist,
     this.songYoutubeUrl,
     this.songSpotifyUrl,
     this.songThumbnail,
     this.songLyrics,
+    this.originalArtists = const [],
+    this.vocals = const [],
+    this.featuredArtists = const [],
+    this.audioPreedit = const [],
+    this.arrangement = const [],
+    this.artworkBy = const [],
+    this.videoBy = const [],
   });
 
   factory Song.fromFirestore(Map<String, dynamic> data) {
@@ -32,13 +46,19 @@ class Song {
       songLanguage: data['language'],
       songAlbum: data['album'],
       songReleaseDate: data['releaseDate'] != null ? (data['releaseDate'] as dynamic).toDate() : null,
-      songFeaturedArtist: data['artist'],
       songYoutubeUrl: data['youtubeUrl'],
       songSpotifyUrl: data['spotifyUrl'],
       songLyrics: data['lyrics'],
       songThumbnail: data['thumbnailUrl'] != null 
         ? Image.network(data['thumbnailUrl']) 
-        : Image.asset('images/callofsilence.jpg'), // Default placeholder
+        : Image.asset('images/callofsilence.jpg'),
+      originalArtists: List<String>.from(data['originalArtists'] ?? []),
+      vocals: List<String>.from(data['vocals'] ?? []),
+      featuredArtists: List<String>.from(data['featuredArtists'] ?? []),
+      audioPreedit: List<String>.from(data['audioPreedit'] ?? []),
+      arrangement: List<String>.from(data['arrangement'] ?? []),
+      artworkBy: List<String>.from(data['artworkBy'] ?? []),
+      videoBy: List<String>.from(data['videoBy'] ?? []),
     );
   }
 
@@ -70,10 +90,6 @@ class Song {
     return songReleaseDate;
   }
 
-  String? featuredArtist() {
-    return songFeaturedArtist;
-  }
-
   String? youtubeUrl() {
     return songYoutubeUrl;
   }
@@ -97,13 +113,15 @@ Song rightfully = Song(
   songLanguage: 'english',
   songAlbum: 'Rightfully (From ”Goblin Slayer”)',
   songReleaseDate: DateTime(2018, 12, 15),
-  songFeaturedArtist: 'IDN/A',
   songYoutubeUrl: 'https://youtu.be/-7BmO8Ocdi8',
   songSpotifyUrl:
       'https://open.spotify.com/track/1PPd67Amh9LXCR2u3dS5gk?si=1226d7cfac2f4dec',
   songThumbnail: Image.network(
     'https://i.scdn.co/image/ab67616d0000b27339f55d313059289288f1c0fc',
   ),
+  originalArtists: ['Mili'],
+  vocals: ['cassie wei'],
+  arrangement: ['Yamato Kasai'],
   songLyrics: r'''[Verse 1]
 Chained onto me
 My adolescent dreams

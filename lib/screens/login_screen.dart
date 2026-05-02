@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:kenoverse/functionality/auth_service.dart';
+import 'package:kenoverse/functionality/theme/theme_extensions.dart';
 
 class LoginScreen extends StatefulWidget {
   const LoginScreen({super.key});
@@ -20,9 +21,9 @@ class _LoginScreenState extends State<LoginScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: Theme.of(context).colorScheme.surface,
+      backgroundColor: context.colorScheme.surface,
       body: Container(
-        padding: const EdgeInsets.symmetric(vertical: 20.0, horizontal: 50.0),
+        padding: context.paddingXL,
         child: Form(
           key: _formKey,
           child: Column(
@@ -30,12 +31,12 @@ class _LoginScreenState extends State<LoginScreen> {
             children: <Widget>[
               Text(
                 'Kenoverse',
-                style: Theme.of(context).textTheme.headlineLarge?.copyWith(
+                style: context.textTheme.headlineLarge?.copyWith(
                   fontWeight: FontWeight.bold,
-                  color: Theme.of(context).colorScheme.primary,
+                  color: context.colorScheme.primary,
                 ),
               ),
-              const SizedBox(height: 20.0),
+              context.gapLG,
               TextFormField(
                 decoration: const InputDecoration(hintText: 'Email'),
                 validator: (val) => val!.isEmpty ? 'Enter an email' : null,
@@ -43,7 +44,7 @@ class _LoginScreenState extends State<LoginScreen> {
                   setState(() => email = val);
                 },
               ),
-              const SizedBox(height: 20.0),
+              context.gapLG,
               TextFormField(
                 obscureText: true,
                 decoration: const InputDecoration(hintText: 'Password'),
@@ -52,7 +53,7 @@ class _LoginScreenState extends State<LoginScreen> {
                   setState(() => password = val);
                 },
               ),
-              const SizedBox(height: 20.0),
+              context.gapLG,
               ElevatedButton(
                 child: const Text('Sign In'),
                 onPressed: () async {
@@ -70,10 +71,10 @@ class _LoginScreenState extends State<LoginScreen> {
                   }
                 },
               ),
-              const SizedBox(height: 12.0),
+              context.gapMD,
               Text(
                 error,
-                style: const TextStyle(color: Colors.red, fontSize: 14.0),
+                style: TextStyle(color: context.colorScheme.error, fontSize: 14.0),
               ),
               TextButton(
                 child: const Text('Register'),
