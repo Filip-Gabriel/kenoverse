@@ -10,6 +10,8 @@ import 'package:kenoverse/screens/login_screen.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:kenoverse/functionality/theme/theme_extensions.dart';
 
+import 'package:kenoverse/functionality/news_model.dart';
+
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
 
@@ -104,16 +106,33 @@ class _HomeScreenState extends State<HomeScreen> {
                 ),
               ),
 
-              // 2. Featured/Hero News Section (Search Trigger)
-              Padding(
-                padding: context.paddingLG,
-                child: KenoSearchBar(
-                  child: News().newNews(
-                    context,
-                    'BREAKING NEWS',
-                    Image.asset('images/callofsilence.jpg'),
-                  ),
-                ),
+              // 2. Featured/Hero News Section (Carousel)
+              StreamBuilder<QuerySnapshot>(
+                stream: FirestoreService().newsStream,
+                builder: (context, snapshot) {
+                  if (snapshot.connectionState == ConnectionState.waiting) {
+                    return const SizedBox(height: 200, child: Center(child: CircularProgressIndicator()));
+                  }
+                  if (!snapshot.hasData || snapshot.data!.docs.isEmpty) {
+                    return const SizedBox();
+                  }
+
+                  var articles = snapshot.data!.docs.map((doc) => NewsArticle.fromFirestore(doc)).toList();
+
+                  return SizedBox(
+                    height: 220,
+                    child: PageView.builder(
+                      controller: PageController(viewportFraction: 0.9),
+                      itemCount: articles.length,
+                      itemBuilder: (context, index) {
+                        return Padding(
+                          padding: const EdgeInsets.symmetric(horizontal: 10.0, vertical: 10.0),
+                          child: News().newNews(context, articles[index]),
+                        );
+                      },
+                    ),
+                  );
+                },
               ),
 
               // 3. Albums Section
@@ -169,7 +188,8 @@ class _HomeScreenState extends State<HomeScreen> {
                             padding: const EdgeInsets.symmetric(horizontal: 20),
                             itemCount: docs.length,
                             itemBuilder: (context, index) {
-                              Song song = Song.fromFirestore(docs[index].data() as Map<String, dynamic>);
+                              var data = docs[index].data() as Map<String, dynamic>;
+                              Song song = Song.fromFirestore(data, docs[index].id);
                               return Albums().newAlbum(context, song);
                             },
                           );
@@ -202,7 +222,8 @@ class _HomeScreenState extends State<HomeScreen> {
                         var docs = snapshot.data!.docs;
                         return Column(
                           children: docs.map((doc) {
-                            Song song = Song.fromFirestore(doc.data() as Map<String, dynamic>);
+                            var data = doc.data() as Map<String, dynamic>;
+                            Song song = Song.fromFirestore(data, doc.id);
                             return _buildRecentSongTile(context, song);
                           }).toList(),
                         );
@@ -262,7 +283,7 @@ class _HomeScreenState extends State<HomeScreen> {
                           ),
                     ),
                     Text(
-                      song.album() ?? 'Single',
+                      song.songAlbums.isNotEmpty ? song.songAlbums.join(', ') : 'Single',
                       style: context.textTheme.bodySmall?.copyWith(
                             color: context.colorScheme.secondary,
                           ),

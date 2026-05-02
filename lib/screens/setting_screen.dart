@@ -4,6 +4,8 @@ import 'package:kenoverse/functionality/auth_service.dart';
 import 'package:kenoverse/screens/login_screen.dart';
 import 'package:kenoverse/functionality/bottom_app_bar.dart';
 import 'package:kenoverse/functionality/theme/theme_extensions.dart';
+import 'package:kenoverse/functionality/firestore_service.dart';
+import 'package:kenoverse/functionality/theme/app_constants.dart';
 
 class SettingScreen extends StatefulWidget {
   const SettingScreen({super.key});
@@ -14,7 +16,35 @@ class SettingScreen extends StatefulWidget {
 
 class _SettingScreenState extends State<SettingScreen> {
   final AuthService _auth = AuthService();
+  final FirestoreService _firestoreService = FirestoreService();
   final User? user = FirebaseAuth.instance.currentUser;
+  final _usernameController = TextEditingController();
+
+  bool _isUsernameSet = false;
+
+  @override
+  void initState() {
+    super.initState();
+    if (user != null) {
+      _loadUsername();
+    }
+  }
+
+  void _loadUsername() async {
+    String? name = await _firestoreService.getUsername(user!.uid);
+    if (name != null) {
+      setState(() {
+        _usernameController.text = name;
+        _isUsernameSet = true;
+      });
+    }
+  }
+
+  @override
+  void dispose() {
+    _usernameController.dispose();
+    super.dispose();
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -26,6 +56,41 @@ class _SettingScreenState extends State<SettingScreen> {
       body: ListView(
         children: [
           _buildSectionHeader('Account'),
+          if (user != null)
+            Padding(
+              padding: context.paddingHorizontal(AppConstants.spacingMD),
+              child: Row(
+                children: [
+                  Expanded(
+                    child: TextField(
+                      controller: _usernameController,
+                      enabled: !_isUsernameSet,
+                      decoration: InputDecoration(
+                        labelText: 'Username',
+                        hintText: 'Enter a username',
+                        suffixIcon: _isUsernameSet ? const Icon(Icons.lock_outline, size: 16) : null,
+                        helperText: _isUsernameSet ? 'Username cannot be changed' : null,
+                      ),
+                    ),
+                  ),
+                  if (!_isUsernameSet) ...[
+                    context.gapMD,
+                    ElevatedButton(
+                      onPressed: () async {
+                        if (_usernameController.text.isNotEmpty) {
+                          await _firestoreService.updateUsername(user!.uid, _usernameController.text);
+                          if (mounted) {
+                            setState(() => _isUsernameSet = true);
+                            ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Username set!')));
+                          }
+                        }
+                      },
+                      child: const Text('Save'),
+                    ),
+                  ],
+                ],
+              ),
+            ),
           ListTile(
             leading: const Icon(Icons.person_outline),
             title: Text(user != null ? 'Logged in as' : 'Not logged in'),

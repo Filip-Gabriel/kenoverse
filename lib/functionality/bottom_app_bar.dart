@@ -3,6 +3,8 @@ import 'package:kenoverse/functionality/ui_elements.dart';
 import 'package:kenoverse/screens/new_song_screen.dart';
 import 'package:kenoverse/screens/home_screen.dart';
 import 'package:kenoverse/screens/setting_screen.dart';
+import 'package:kenoverse/screens/playlist_screen.dart';
+import 'package:kenoverse/screens/artworks_screen.dart';
 import 'package:kenoverse/functionality/theme/app_constants.dart';
 
 class BottomBar {
@@ -28,6 +30,28 @@ class BottomBar {
               icon: const Icon(Icons.search),
               onPressed: () {
                 KenoSearchBar.open(context);
+              },
+              padding: EdgeInsets.zero,
+              constraints: const BoxConstraints(),
+            ),
+            IconButton(
+              icon: const Icon(Icons.playlist_play),
+              onPressed: () {
+                Navigator.pushReplacement(
+                  context,
+                  MaterialPageRoute(builder: (context) => const PlaylistScreen()),
+                );
+              },
+              padding: EdgeInsets.zero,
+              constraints: const BoxConstraints(),
+            ),
+            IconButton(
+              icon: const Icon(Icons.image_outlined),
+              onPressed: () {
+                Navigator.pushReplacement(
+                  context,
+                  MaterialPageRoute(builder: (context) => const ArtworksScreen()),
+                );
               },
               padding: EdgeInsets.zero,
               constraints: const BoxConstraints(),

@@ -3,48 +3,83 @@ import 'package:kenoverse/functionality/lyrics.dart';
 import 'package:kenoverse/screens/lyric_screen.dart';
 import 'package:kenoverse/functionality/theme/theme_extensions.dart';
 
+import 'package:kenoverse/functionality/news_model.dart';
+import 'package:kenoverse/screens/news_article_screen.dart';
+
 class News {
-  Widget newNews(BuildContext context, String title, Image thumbnail) {
-    return Container(
-      clipBehavior: Clip.antiAlias,
-      height: 200,
-      decoration: BoxDecoration(
-        border: Border.all(color: context.colorScheme.outlineVariant),
-        color: context.colorScheme.secondaryContainer,
-        borderRadius: context.radiusXL,
-        boxShadow: [
-          BoxShadow(
-            color: context.colorScheme.shadow.withValues(alpha: 0.2),
-            offset: const Offset(4.0, 4.0),
-            blurRadius: 10.0,
-            spreadRadius: 1.0,
-          ),
-        ],
-      ),
-      child: Stack(
-        fit: StackFit.expand,
-        children: [
-          Image(image: thumbnail.image, fit: BoxFit.cover),
-          Positioned(
-            bottom: 10,
-            left: 15,
-            child: Text(
-              title,
-              style: const TextStyle(
-                color: Colors.white,
-                fontSize: 20,
-                fontWeight: FontWeight.bold,
-                shadows: [
-                  Shadow(
-                    blurRadius: 10.0,
-                    color: Colors.black,
-                    offset: Offset(2.0, 2.0),
+  Widget newNews(BuildContext context, NewsArticle article) {
+    return GestureDetector(
+      onTap: () {
+        Navigator.push(
+          context,
+          MaterialPageRoute(builder: (context) => NewsArticleScreen(article: article)),
+        );
+      },
+      child: Container(
+        clipBehavior: Clip.antiAlias,
+        decoration: BoxDecoration(
+          border: Border.all(color: context.colorScheme.outlineVariant),
+          color: context.colorScheme.secondaryContainer,
+          borderRadius: context.radiusXL,
+          boxShadow: [
+            BoxShadow(
+              color: context.colorScheme.shadow.withValues(alpha: 0.2),
+              offset: const Offset(4.0, 4.0),
+              blurRadius: 10.0,
+              spreadRadius: 1.0,
+            ),
+          ],
+        ),
+        child: Stack(
+          fit: StackFit.expand,
+          children: [
+            Image.network(
+              article.imageUrl,
+              fit: BoxFit.cover,
+              loadingBuilder: (context, child, loadingProgress) {
+                if (loadingProgress == null) return child;
+                return Center(
+                  child: CircularProgressIndicator(
+                    value: loadingProgress.expectedTotalBytes != null
+                        ? loadingProgress.cumulativeBytesLoaded / loadingProgress.expectedTotalBytes!
+                        : null,
                   ),
-                ],
+                );
+              },
+              errorBuilder: (context, error, stackTrace) => Image.asset(
+                'images/callofsilence.jpg',
+                fit: BoxFit.cover,
               ),
             ),
-          ),
-        ],
+            Container(
+              decoration: BoxDecoration(
+                gradient: LinearGradient(
+                  begin: Alignment.topCenter,
+                  end: Alignment.bottomCenter,
+                  colors: [
+                    Colors.transparent,
+                    Colors.black.withValues(alpha: 0.7),
+                  ],
+                ),
+              ),
+            ),
+            Positioned(
+              bottom: 15,
+              left: 15,
+              right: 15,
+              child: Text(
+                article.title,
+                style: const TextStyle(
+                  color: Colors.white,
+                  fontSize: 18,
+                  fontWeight: FontWeight.bold,
+                ),
+                maxLines: 2,
+                overflow: TextOverflow.ellipsis,
+              ),
+            ),
+          ],
+        ),
       ),
     );
   }
@@ -99,7 +134,7 @@ class Albums {
                 borderRadius: context.radiusXS,
               ),
               child: Hero(
-                tag: 'song-art-${melody.title()}',
+                tag: 'song-art-${melody.id}',
                 child: Image(image: thumbnail.image, fit: BoxFit.cover),
               ),
             ),

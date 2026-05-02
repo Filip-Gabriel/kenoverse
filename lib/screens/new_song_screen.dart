@@ -6,7 +6,8 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:kenoverse/functionality/theme/theme_extensions.dart';
 
 class NewSong extends StatefulWidget {
-  const NewSong({super.key});
+  final Song? existingSong;
+  const NewSong({super.key, this.existingSong});
   @override
   State<NewSong> createState() => _NewSongState();
 }
@@ -14,29 +15,70 @@ class NewSong extends StatefulWidget {
 class _NewSongState extends State<NewSong> {
   final FirestoreService _firestoreService = FirestoreService();
 
-  final TextEditingController _titleController = TextEditingController();
-  final TextEditingController _lyricsController = TextEditingController();
-  final TextEditingController _youtubeController = TextEditingController();
-  final TextEditingController _spotifyController = TextEditingController();
-  final TextEditingController _languageController = TextEditingController();
-  final TextEditingController _albumController = TextEditingController();
-  final TextEditingController _thumbnailController = TextEditingController();
+  late TextEditingController _titleController;
+  late TextEditingController _lyricsController;
+  late TextEditingController _youtubeController;
+  late TextEditingController _spotifyController;
+  late TextEditingController _languageController;
+  late TextEditingController _albumController;
+  late TextEditingController _thumbnailController;
 
   // Multi-artist controllers
-  final TextEditingController _originalArtistController = TextEditingController();
-  final TextEditingController _vocalsController = TextEditingController();
-  final TextEditingController _featuredArtistController = TextEditingController();
-  final TextEditingController _audioController = TextEditingController();
-  final TextEditingController _arrangementController = TextEditingController();
-  final TextEditingController _artworkController = TextEditingController();
-  final TextEditingController _videoController = TextEditingController();
+  late TextEditingController _originalArtistController;
+  late TextEditingController _vocalsController;
+  late TextEditingController _featuredArtistController;
+  late TextEditingController _audioController;
+  late TextEditingController _arrangementController;
+  late TextEditingController _artworkController;
+  late TextEditingController _videoController;
 
   DateTime? _selectedDate;
+
+  @override
+  void initState() {
+    super.initState();
+    final song = widget.existingSong;
+    _titleController = TextEditingController(text: song?.songTitle);
+    _lyricsController = TextEditingController(text: song?.songLyrics);
+    _youtubeController = TextEditingController(text: song?.songYoutubeUrl);
+    _spotifyController = TextEditingController(text: song?.songSpotifyUrl);
+    _languageController = TextEditingController(text: song?.songLanguage);
+    _albumController = TextEditingController(text: song?.songAlbums.join(', '));
+    _thumbnailController = TextEditingController(text: song?.songThumbnailUrl);
+
+    _originalArtistController = TextEditingController(text: song?.originalArtists.join(', '));
+    _vocalsController = TextEditingController(text: song?.vocals.join(', '));
+    _featuredArtistController = TextEditingController(text: song?.featuredArtists.join(', '));
+    _audioController = TextEditingController(text: song?.audioPreedit.join(', '));
+    _arrangementController = TextEditingController(text: song?.arrangement.join(', '));
+    _artworkController = TextEditingController(text: song?.artworkBy.join(', '));
+    _videoController = TextEditingController(text: song?.videoBy.join(', '));
+    _selectedDate = song?.songReleaseDate;
+  }
+
+  @override
+  void dispose() {
+    _titleController.dispose();
+    _lyricsController.dispose();
+    _youtubeController.dispose();
+    _spotifyController.dispose();
+    _languageController.dispose();
+    _albumController.dispose();
+    _thumbnailController.dispose();
+    _originalArtistController.dispose();
+    _vocalsController.dispose();
+    _featuredArtistController.dispose();
+    _audioController.dispose();
+    _arrangementController.dispose();
+    _artworkController.dispose();
+    _videoController.dispose();
+    super.dispose();
+  }
 
   Future<void> _selectDate(BuildContext context) async {
     final DateTime? picked = await showDatePicker(
       context: context,
-      initialDate: DateTime.now(),
+      initialDate: _selectedDate ?? DateTime.now(),
       firstDate: DateTime(2000),
       lastDate: DateTime(2101),
     );
@@ -58,30 +100,58 @@ class _NewSongState extends State<NewSong> {
       return;
     }
 
+    final originalArtists = _parseArtists(_originalArtistController.text);
+    final vocals = _parseArtists(_vocalsController.text);
+    final featuredArtists = _parseArtists(_featuredArtistController.text);
+    final audioPreedit = _parseArtists(_audioController.text);
+    final arrangement = _parseArtists(_arrangementController.text);
+    final artworkBy = _parseArtists(_artworkController.text);
+    final videoBy = _parseArtists(_videoController.text);
+
+    // Create a flattened search array for artist profiles
+    final allContributors = {
+      ...originalArtists,
+      ...vocals,
+      ...featuredArtists,
+      ...audioPreedit,
+      ...arrangement,
+      ...artworkBy,
+      ...videoBy,
+    }.map((s) => s.toLowerCase().trim()).toList();
+
+    final songData = {
+      'title': _titleController.text,
+      'lyrics': _lyricsController.text,
+      'albums': _parseArtists(_albumController.text),
+      'language': _languageController.text,
+      'releaseDate': _selectedDate != null ? Timestamp.fromDate(_selectedDate!) : null,
+      'youtubeUrl': _youtubeController.text,
+      'spotifyUrl': _spotifyController.text,
+      'thumbnailUrl': _thumbnailController.text.isEmpty ? null : _thumbnailController.text,
+      'originalArtists': originalArtists,
+      'vocals': vocals,
+      'featuredArtists': featuredArtists,
+      'audioPreedit': audioPreedit,
+      'arrangement': arrangement,
+      'artworkBy': artworkBy,
+      'videoBy': videoBy,
+      'allContributors': allContributors,
+      'timestamp': FieldValue.serverTimestamp(),
+    };
+
     if (!asDraft) {
-      _firestoreService.addSong({
-        'title': _titleController.text,
-        'lyrics': _lyricsController.text,
-        'album': _albumController.text,
-        'language': _languageController.text,
-        'releaseDate': _selectedDate != null ? Timestamp.fromDate(_selectedDate!) : null,
-        'youtubeUrl': _youtubeController.text,
-        'spotifyUrl': _spotifyController.text,
-        'thumbnailUrl': _thumbnailController.text.isEmpty ? null : _thumbnailController.text,
-        'originalArtists': _parseArtists(_originalArtistController.text),
-        'vocals': _parseArtists(_vocalsController.text),
-        'featuredArtists': _parseArtists(_featuredArtistController.text),
-        'audioPreedit': _parseArtists(_audioController.text),
-        'arrangement': _parseArtists(_arrangementController.text),
-        'artworkBy': _parseArtists(_artworkController.text),
-        'videoBy': _parseArtists(_videoController.text),
-        'timestamp': FieldValue.serverTimestamp(),
-      });
+      if (widget.existingSong?.id != null) {
+        _firestoreService.updateSong(widget.existingSong!.id!, songData);
+      } else {
+        _firestoreService.addSong(songData);
+      }
     }
 
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
-        content: Text(asDraft ? 'Draft saved locally' : 'Song uploaded successfully!'),
+        content: Text(asDraft 
+          ? 'Draft saved locally' 
+          : (widget.existingSong != null ? 'Song updated successfully!' : 'Song uploaded successfully!')),
         backgroundColor: asDraft ? null : context.colorScheme.primary,
         behavior: SnackBarBehavior.floating,
       ),
@@ -137,7 +207,7 @@ class _NewSongState extends State<NewSong> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text('New Release'),
+        title: Text(widget.existingSong != null ? 'Edit Release' : 'New Release'),
         centerTitle: true,
       ),
       body: SingleChildScrollView(
@@ -246,7 +316,7 @@ class _NewSongState extends State<NewSong> {
             _buildSectionHeader('Metadata', Icons.settings_outlined),
             TextField(
               controller: _albumController,
-              decoration: _inputDecoration('Album Name', prefixIcon: Icons.album),
+              decoration: _inputDecoration('Album(s)', prefixIcon: Icons.album, hint: 'Separate with commas'),
             ),
             context.gapMD,
             Row(
@@ -285,32 +355,36 @@ class _NewSongState extends State<NewSong> {
             ),
 
             context.gapXXL,
-            Row(
-              children: [
-                Expanded(
-                  child: OutlinedButton(
-                    onPressed: () => _processSong(asDraft: true),
-                    style: OutlinedButton.styleFrom(
-                      padding: const EdgeInsets.symmetric(vertical: 16),
-                      shape: RoundedRectangleBorder(borderRadius: context.radiusMD),
-                    ),
-                    child: const Text('Save Draft'),
+          ],
+        ),
+      ),
+      bottomNavigationBar: BottomAppBar(
+        height: 80,
+        padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
+        child: Row(
+          children: [
+            if (widget.existingSong == null)
+              Expanded(
+                child: OutlinedButton(
+                  onPressed: () => _processSong(asDraft: true),
+                  style: OutlinedButton.styleFrom(
+                    padding: const EdgeInsets.symmetric(vertical: 16),
+                    shape: RoundedRectangleBorder(borderRadius: context.radiusMD),
                   ),
+                  child: const Text('Save Draft'),
                 ),
-                context.gapMD,
-                Expanded(
-                  child: FilledButton(
-                    onPressed: () => _processSong(asDraft: false),
-                    style: FilledButton.styleFrom(
-                      padding: const EdgeInsets.symmetric(vertical: 16),
-                      shape: RoundedRectangleBorder(borderRadius: context.radiusMD),
-                    ),
-                    child: const Text('Post Song'),
-                  ),
+              ),
+            if (widget.existingSong == null) context.gapMD,
+            Expanded(
+              child: FilledButton(
+                onPressed: () => _processSong(asDraft: false),
+                style: FilledButton.styleFrom(
+                  padding: const EdgeInsets.symmetric(vertical: 16),
+                  shape: RoundedRectangleBorder(borderRadius: context.radiusMD),
                 ),
-              ],
+                child: Text(widget.existingSong != null ? 'Update Song' : 'Post Song'),
+              ),
             ),
-            context.gapLG,
           ],
         ),
       ),

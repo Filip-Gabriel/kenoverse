@@ -24,3 +24,8 @@ class Kenoverse extends StatelessWidget {
     );
   }
 }
+//todo make it so that when clicking the album title/icon of the sideways listview in the homescreen, it opens up a newpage where all albums are shown(the new screen should include the kenoappbar)
+//todo when searching something in the kenosearchbar, it shows previews of what you might be looking for and once you click enter, you get redirected to a new page that shows all results(it should have the kenoappbar)(it should search everything, from release date, to lyrics, to artist, to the artists credited. it should only show the card of the songs, not details(like the recent releases section from the homescreen))
+//todo add a recently accesed section(sideways listview) in the homescreen that will display the last 10 songs the user has accesed
+// todo expand the settings menu
+//todo add karaoke function

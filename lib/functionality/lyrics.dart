@@ -1,12 +1,59 @@
 import 'package:flutter/material.dart';
 
+class AudioVersion {
+  final String name; // e.g., "Original", "Sped Up", "Slowed"
+  final String? youtubeUrl;
+  final String? spotifyUrl;
+
+  AudioVersion({required this.name, this.youtubeUrl, this.spotifyUrl});
+
+  factory AudioVersion.fromMap(Map<String, dynamic> data) {
+    return AudioVersion(
+      name: data['name'] ?? 'Unknown',
+      youtubeUrl: data['youtubeUrl'],
+      spotifyUrl: data['spotifyUrl'],
+    );
+  }
+
+  Map<String, dynamic> toMap() {
+    return {
+      'name': name,
+      'youtubeUrl': youtubeUrl,
+      'spotifyUrl': spotifyUrl,
+    };
+  }
+}
+
+class LyricVersion {
+  final String language; // e.g., "English", "Japanese", "Romanized"
+  final String lyrics;
+
+  LyricVersion({required this.language, required this.lyrics});
+
+  factory LyricVersion.fromMap(Map<String, dynamic> data) {
+    return LyricVersion(
+      language: data['language'] ?? 'Unknown',
+      lyrics: data['lyrics'] ?? '',
+    );
+  }
+
+  Map<String, dynamic> toMap() {
+    return {
+      'language': language,
+      'lyrics': lyrics,
+    };
+  }
+}
+
 class Song {
+  String? id; // Firestore document ID
   late String songTitle;
-  String? songLyrics;
+  String? songLyrics; // Main/Default lyrics
   Image? songThumbnail;
+  String? songThumbnailUrl;
   bool isDraft;
   String? songLanguage;
-  String? songAlbum;
+  List<String> songAlbums;
   DateTime? songReleaseDate;
   String? songYoutubeUrl;
   String? songSpotifyUrl;
@@ -20,15 +67,21 @@ class Song {
   List<String> artworkBy;
   List<String> videoBy;
 
+  // Versions
+  List<AudioVersion>? audioVersions;
+  List<LyricVersion>? lyricVersions;
+
   Song(
     this.songTitle, {
+    this.id,
     this.isDraft = true,
     this.songLanguage,
-    this.songAlbum,
+    this.songAlbums = const [],
     this.songReleaseDate,
     this.songYoutubeUrl,
     this.songSpotifyUrl,
     this.songThumbnail,
+    this.songThumbnailUrl,
     this.songLyrics,
     this.originalArtists = const [],
     this.vocals = const [],
@@ -37,18 +90,22 @@ class Song {
     this.arrangement = const [],
     this.artworkBy = const [],
     this.videoBy = const [],
+    this.audioVersions = const [],
+    this.lyricVersions = const [],
   });
 
-  factory Song.fromFirestore(Map<String, dynamic> data) {
+  factory Song.fromFirestore(Map<String, dynamic> data, String documentId) {
     return Song(
       data['title'] ?? 'Unknown Title',
+      id: documentId,
       isDraft: false,
       songLanguage: data['language'],
-      songAlbum: data['album'],
+      songAlbums: List<String>.from(data['albums'] ?? (data['album'] != null ? [data['album']] : [])),
       songReleaseDate: data['releaseDate'] != null ? (data['releaseDate'] as dynamic).toDate() : null,
       songYoutubeUrl: data['youtubeUrl'],
       songSpotifyUrl: data['spotifyUrl'],
       songLyrics: data['lyrics'],
+      songThumbnailUrl: data['thumbnailUrl'],
       songThumbnail: data['thumbnailUrl'] != null 
         ? Image.network(data['thumbnailUrl']) 
         : Image.asset('images/callofsilence.jpg'),
@@ -59,6 +116,12 @@ class Song {
       arrangement: List<String>.from(data['arrangement'] ?? []),
       artworkBy: List<String>.from(data['artworkBy'] ?? []),
       videoBy: List<String>.from(data['videoBy'] ?? []),
+      audioVersions: (data['audioVersions'] as List? ?? [])
+          .map((v) => AudioVersion.fromMap(Map<String, dynamic>.from(v)))
+          .toList(),
+      lyricVersions: (data['lyricVersions'] as List? ?? [])
+          .map((v) => LyricVersion.fromMap(Map<String, dynamic>.from(v)))
+          .toList(),
     );
   }
 
@@ -82,8 +145,8 @@ class Song {
     return songLanguage;
   }
 
-  String? album() {
-    return songAlbum;
+  List<String> albums() {
+    return songAlbums;
   }
 
   DateTime? releaseDate() {
@@ -111,7 +174,7 @@ Song rightfully = Song(
   'Rightfully',
   isDraft: false,
   songLanguage: 'english',
-  songAlbum: 'Rightfully (From ”Goblin Slayer”)',
+  songAlbums: ['Rightfully (From ”Goblin Slayer”)'],
   songReleaseDate: DateTime(2018, 12, 15),
   songYoutubeUrl: 'https://youtu.be/-7BmO8Ocdi8',
   songSpotifyUrl:
