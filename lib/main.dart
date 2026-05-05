@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 // import 'package:http/http.dart' as http;
-import 'package:kenoverse/screens/home_screen.dart';
 import 'functionality/theme/theme.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'firebase_options.dart';
