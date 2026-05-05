@@ -119,6 +119,14 @@ class _NewSongState extends State<NewSong> {
       ...videoBy,
     }.map((s) => s.toLowerCase().trim()).toList();
 
+    // Comprehensive search keywords
+    final searchKeywords = {
+      ..._titleController.text.toLowerCase().split(' '),
+      ..._albumController.text.toLowerCase().split(' '),
+      ..._lyricsController.text.toLowerCase().split(' '),
+      ...allContributors,
+    }.where((s) => s.length > 2).toList();
+
     final songData = {
       'title': _titleController.text,
       'lyrics': _lyricsController.text,
@@ -136,6 +144,7 @@ class _NewSongState extends State<NewSong> {
       'artworkBy': artworkBy,
       'videoBy': videoBy,
       'allContributors': allContributors,
+      'searchKeywords': searchKeywords,
       'timestamp': FieldValue.serverTimestamp(),
     };
 

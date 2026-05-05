@@ -11,6 +11,7 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:kenoverse/functionality/theme/theme_extensions.dart';
 
 import 'package:kenoverse/functionality/news_model.dart';
+import 'package:kenoverse/screens/all_albums_screen.dart';
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
@@ -122,11 +123,11 @@ class _HomeScreenState extends State<HomeScreen> {
                   return SizedBox(
                     height: 220,
                     child: PageView.builder(
-                      controller: PageController(viewportFraction: 0.9),
+                      controller: PageController(viewportFraction: 0.98),
                       itemCount: articles.length,
                       itemBuilder: (context, index) {
                         return Padding(
-                          padding: const EdgeInsets.symmetric(horizontal: 10.0, vertical: 10.0),
+                          padding: const EdgeInsets.symmetric(horizontal: 0.0, vertical: 0.0),
                           child: News().newNews(context, articles[index]),
                         );
                       },
@@ -148,21 +149,29 @@ class _HomeScreenState extends State<HomeScreen> {
                   children: [
                     Padding(
                       padding: const EdgeInsets.symmetric(horizontal: 25.0),
-                      child: Row(
-                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                        children: [
-                          Text(
-                            'Albums',
-                            style: context.textTheme.titleLarge?.copyWith(
-                                  fontWeight: FontWeight.bold,
-                                ),
-                          ),
-                          Icon(
-                            Icons.arrow_forward,
-                            size: 20,
-                            color: context.colorScheme.secondary,
-                          ),
-                        ],
+                      child: GestureDetector(
+                        onTap: () {
+                          Navigator.push(
+                            context,
+                            MaterialPageRoute(builder: (context) => const AllAlbumsScreen()),
+                          );
+                        },
+                        child: Row(
+                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                          children: [
+                            Text(
+                              'Albums',
+                              style: context.textTheme.titleLarge?.copyWith(
+                                    fontWeight: FontWeight.bold,
+                                  ),
+                            ),
+                            Icon(
+                              Icons.arrow_forward,
+                              size: 20,
+                              color: context.colorScheme.secondary,
+                            ),
+                          ],
+                        ),
                       ),
                     ),
                     context.gapMD,
@@ -199,7 +208,53 @@ class _HomeScreenState extends State<HomeScreen> {
                     
                     context.gapLG,
                     
-                    // 4. Recent Songs List
+                    // 4. Recently Accessed Section
+                    Padding(
+                      padding: const EdgeInsets.symmetric(horizontal: 25.0),
+                      child: Text(
+                        'Recently Accessed',
+                        style: context.textTheme.titleLarge?.copyWith(
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                    ),
+                    context.gapSM,
+                    SizedBox(
+                      height: 120,
+                      child: StreamBuilder<QuerySnapshot>(
+                        stream: FirestoreService().getHistoryStream(FirebaseAuth.instance.currentUser?.uid ?? ''),
+                        builder: (context, snapshot) {
+                          if (!snapshot.hasData || snapshot.data!.docs.isEmpty) {
+                            return const SizedBox();
+                          }
+                          var historyDocs = snapshot.data!.docs;
+                          
+                          return ListView.builder(
+                            scrollDirection: Axis.horizontal,
+                            padding: const EdgeInsets.symmetric(horizontal: 20),
+                            itemCount: historyDocs.length,
+                            itemBuilder: (context, index) {
+                              String songId = historyDocs[index]['songId'];
+                              return FutureBuilder<DocumentSnapshot>(
+                                future: FirestoreService().songsCollection.doc(songId).get(),
+                                builder: (context, songSnapshot) {
+                                  if (!songSnapshot.hasData || !songSnapshot.data!.exists) {
+                                    return const SizedBox();
+                                  }
+                                  var data = songSnapshot.data!.data() as Map<String, dynamic>;
+                                  Song song = Song.fromFirestore(data, songSnapshot.data!.id);
+                                  return _buildRecentlyAccessedAlbum(context, song);
+                                },
+                              );
+                            },
+                          );
+                        },
+                      ),
+                    ),
+                    
+                    context.gapLG,
+                    
+                    // 5. Recent Releases List
                     Padding(
                       padding: const EdgeInsets.symmetric(horizontal: 25.0),
                       child: Text(
@@ -237,6 +292,43 @@ class _HomeScreenState extends State<HomeScreen> {
         ),
       ),
       bottomNavigationBar: BottomBar.bottomAppBar(context),
+    );
+  }
+
+  Widget _buildRecentlyAccessedAlbum(BuildContext context, Song song) {
+    return GestureDetector(
+      onTap: () {
+        Navigator.push(
+          context,
+          MaterialPageRoute(
+            builder: (context) => LyricScreen(song: song),
+          ),
+        );
+      },
+      child: Container(
+        width: 90,
+        margin: const EdgeInsets.symmetric(horizontal: 5),
+        child: Column(
+          children: [
+            ClipRRect(
+              borderRadius: context.radiusMD,
+              child: Image(
+                image: song.thumbnail()!.image,
+                height: 80,
+                width: 80,
+                fit: BoxFit.cover,
+              ),
+            ),
+            context.gapXS,
+            Text(
+              song.title(),
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+              style: context.textTheme.bodySmall?.copyWith(fontWeight: FontWeight.bold),
+            ),
+          ],
+        ),
+      ),
     );
   }
 

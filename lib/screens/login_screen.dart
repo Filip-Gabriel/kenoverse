@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:kenoverse/functionality/auth_service.dart';
 import 'package:kenoverse/functionality/theme/theme_extensions.dart';
+import 'home_screen.dart';
 
 class LoginScreen extends StatefulWidget {
   const LoginScreen({super.key});
@@ -27,10 +28,6 @@ class _LoginScreenState extends State<LoginScreen> {
       appBar: AppBar(
         backgroundColor: Colors.transparent,
         elevation: 0,
-        leading: IconButton(
-          icon: const Icon(Icons.close),
-          onPressed: () => Navigator.pop(context),
-        ),
       ),
       body: SingleChildScrollView(
         padding: context.paddingXL,
@@ -105,7 +102,7 @@ class _LoginScreenState extends State<LoginScreen> {
                           loading = false;
                         });
                       } else {
-                        if (context.mounted) Navigator.pop(context);
+                        MaterialPageRoute(builder: (context) => const HomeScreen());
                       }
                     }
                   },
@@ -122,8 +119,7 @@ class _LoginScreenState extends State<LoginScreen> {
                   : 'New here? Create an Account'),
                 onPressed: () {
                   setState(() {
-                    isRegistering = !isRegistering;
-                    error = '';
+                    isRegistering=!isRegistering;
                   });
                 },
               ),

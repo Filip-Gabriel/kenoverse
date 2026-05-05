@@ -85,6 +85,35 @@ class FirestoreService {
     return songsCollection.where('allContributors', arrayContains: slug).snapshots();
   }
 
+  Future<List<Song>> searchSongs(String query) async {
+    if (query.isEmpty) return [];
+    String q = query.toLowerCase().trim();
+    
+    // Fetch all songs for local filtering (most reliable for partial matches across all fields)
+    QuerySnapshot snapshot = await songsCollection.get();
+
+    return snapshot.docs.map((doc) {
+      return Song.fromFirestore(doc.data() as Map<String, dynamic>, doc.id);
+    }).where((song) {
+      // Search in everything: title, albums, lyrics, contributors
+      final titleMatch = song.songTitle.toLowerCase().contains(q);
+      final albumMatch = song.songAlbums.any((a) => a.toLowerCase().contains(q));
+      final lyricMatch = (song.songLyrics ?? '').toLowerCase().contains(q);
+      
+      final contributorMatch = [
+        ...song.originalArtists,
+        ...song.vocals,
+        ...song.featuredArtists,
+        ...song.audioPreedit,
+        ...song.arrangement,
+        ...song.artworkBy,
+        ...song.videoBy,
+      ].any((c) => c.toLowerCase().contains(q));
+
+      return titleMatch || albumMatch || lyricMatch || contributorMatch;
+    }).toList();
+  }
+
   // Playlist methods
   Future<void> createPlaylist(Playlist playlist) async {
     await playlistsCollection.add(playlist.toMap());
@@ -184,5 +213,36 @@ class FirestoreService {
 
   Stream<QuerySnapshot> get newsStream {
     return newsCollection.orderBy('timestamp', descending: true).snapshots();
+  }
+
+  // History methods
+  Future<void> addToHistory(String userId, String songId) async {
+    final historyRef = FirebaseFirestore.instance
+        .collection('users')
+        .doc(userId)
+        .collection('history');
+    
+    // Check if it already exists to update the timestamp
+    final doc = await historyRef.doc(songId).get();
+    if (doc.exists) {
+      await historyRef.doc(songId).update({
+        'timestamp': FieldValue.serverTimestamp(),
+      });
+    } else {
+      await historyRef.doc(songId).set({
+        'songId': songId,
+        'timestamp': FieldValue.serverTimestamp(),
+      });
+    }
+  }
+
+  Stream<QuerySnapshot> getHistoryStream(String userId) {
+    return FirebaseFirestore.instance
+        .collection('users')
+        .doc(userId)
+        .collection('history')
+        .orderBy('timestamp', descending: true)
+        .limit(10)
+        .snapshots();
   }
 }

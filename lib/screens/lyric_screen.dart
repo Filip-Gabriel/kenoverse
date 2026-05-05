@@ -35,6 +35,12 @@ class _LyricScreenState extends State<LyricScreen> {
     activeYoutubeUrl = widget.song.songYoutubeUrl;
     activeSpotifyUrl = widget.song.songSpotifyUrl;
     activeAudioName = 'Standard';
+
+    // Add to history when song is loaded
+    final user = FirebaseAuth.instance.currentUser;
+    if (user != null && widget.song.id != null) {
+      FirestoreService().addToHistory(user.uid, widget.song.id!);
+    }
   }
 
   void _launchURL(String? urlString) async {

@@ -4,6 +4,8 @@ import 'package:kenoverse/functionality/auth_service.dart';
 import 'package:kenoverse/screens/login_screen.dart';
 import 'package:kenoverse/functionality/bottom_app_bar.dart';
 import 'package:kenoverse/functionality/theme/theme_extensions.dart';
+import 'package:provider/provider.dart';
+import 'package:kenoverse/functionality/theme/theme_notifier.dart';
 import 'package:kenoverse/functionality/firestore_service.dart';
 import 'package:kenoverse/functionality/theme/app_constants.dart';
 
@@ -115,13 +117,29 @@ class _SettingScreenState extends State<SettingScreen> {
           ),
           const Divider(),
           _buildSectionHeader('Appearance'),
-          SwitchListTile(
-            secondary: const Icon(Icons.dark_mode_outlined),
-            title: const Text('Dark Mode'),
-            value: context.isDarkMode,
-            onChanged: (bool value) {
-              ScaffoldMessenger.of(context).showSnackBar(
-                const SnackBar(content: Text('Theme switching coming soon!')),
+          Consumer<ThemeNotifier>(
+            builder: (context, themeNotifier, child) {
+              return Column(
+                children: [
+                  RadioListTile<ThemeMode>(
+                    title: const Text('Follow System'),
+                    value: ThemeMode.system,
+                    groupValue: themeNotifier.themeMode,
+                    onChanged: (mode) => themeNotifier.setThemeMode(mode!),
+                  ),
+                  RadioListTile<ThemeMode>(
+                    title: const Text('Light Mode'),
+                    value: ThemeMode.light,
+                    groupValue: themeNotifier.themeMode,
+                    onChanged: (mode) => themeNotifier.setThemeMode(mode!),
+                  ),
+                  RadioListTile<ThemeMode>(
+                    title: const Text('Dark Mode'),
+                    value: ThemeMode.dark,
+                    groupValue: themeNotifier.themeMode,
+                    onChanged: (mode) => themeNotifier.setThemeMode(mode!),
+                  ),
+                ],
               );
             },
           ),

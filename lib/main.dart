@@ -4,13 +4,21 @@ import 'package:kenoverse/screens/home_screen.dart';
 import 'functionality/theme/theme.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'firebase_options.dart';
+import 'package:kenoverse/functionality/auth_check.dart';
+import 'package:provider/provider.dart';
+import 'package:kenoverse/functionality/theme/theme_notifier.dart';
 
-Future <void> main() async {
+Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
   await Firebase.initializeApp(
     options: DefaultFirebaseOptions.currentPlatform,
   );
-  runApp(Kenoverse());
+  runApp(
+    ChangeNotifierProvider(
+      create: (_) => ThemeNotifier(),
+      child: const Kenoverse(),
+    ),
+  );
 }
 
 class Kenoverse extends StatelessWidget {
@@ -20,13 +28,18 @@ class Kenoverse extends StatelessWidget {
   Widget build(BuildContext context) {
     return MaterialApp(
       theme: CustomTheme.lightTheme(),
-      home: const HomeScreen(),
+      darkTheme: CustomTheme.darkTheme(),
+      themeMode: Provider.of<ThemeNotifier>(context).themeMode,
+      home: AuthCheck(),
     );
   }
 }
-//todo make it so that when clicking the album title/icon of the sideways listview in the homescreen, it opens up a newpage where all albums are shown(the new screen should include the kenoappbar)
-//todo when searching something in the kenosearchbar, it shows previews of what you might be looking for and once you click enter, you get redirected to a new page that shows all results(it should have the kenoappbar)(it should search everything, from release date, to lyrics, to artist, to the artists credited. it should only show the card of the songs, not details(like the recent releases section from the homescreen))
-//todo add a recently accesed section(sideways listview) in the homescreen that will display the last 10 songs the user has accesed
-//todo add the theme changing feature and pick theme based on system settings
 //todo expand the settings menu
-//todo add karaoke function
+//todo move the settings menu to the profile icon one
+//todo remove the disabled textfield that shows the users username(replace it with something more aestethically pleasing)
+//todo once a user signs up, they get assigned an id that will show under their username, ever so slightly dimmed. it should be formatted like "Nekovert #(the next number from the one of the one before him.)"
+//todo add karaoke function(the user will hit the play button which will start a timer, and based on how the lyrics are configured to the timestamp, the current ones will get highlighted, while the others will be dimmed)
+//todo expand karaoke function. you can now link an audio file to a song and once you hit play, the respective audio track will also start playing
+//todo expand karaoke function. add youtube preview and make it so that you can play the youtube mv in a popup in the app
+//allabumscreen: remove the bottom bar an replace with top appbar?
+//allabumscreen: wrap it in a safe area?
