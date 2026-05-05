@@ -35,6 +35,8 @@ class Kenoverse extends StatelessWidget {
   }
 }
 //todo expand the settings menu
+//todo in the login screen, add a button that will reveal the password written
+//todo fix the issues happenning when you sign out using the settings menu
 //todo move the settings menu to the profile icon one
 //todo remove the disabled textfield that shows the users username(replace it with something more aestethically pleasing)
 //todo once a user signs up, they get assigned an id that will show under their username, ever so slightly dimmed. it should be formatted like "Nekovert #(the next number from the one of the one before him.)"
