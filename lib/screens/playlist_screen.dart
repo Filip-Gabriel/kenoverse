@@ -45,7 +45,7 @@ class _PlaylistScreenState extends State<PlaylistScreen> {
               const Text('Please sign in to view your playlists'),
               context.gapMD,
               ElevatedButton(
-                onPressed: () => Navigator.pop(context),
+                onPressed: () =>Navigator.pop(context),
                 child: const Text('Go Back'),
               ),
             ],

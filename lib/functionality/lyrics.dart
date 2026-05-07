@@ -1,17 +1,26 @@
 import 'package:flutter/material.dart';
 
+class LyricLine {
+  final Duration startTime;
+  final String text;
+
+  LyricLine({required this.startTime, required this.text});
+}
+
 class AudioVersion {
   final String name; // e.g., "Original", "Sped Up", "Slowed"
   final String? youtubeUrl;
   final String? spotifyUrl;
+  final String? audioUrl;
 
-  AudioVersion({required this.name, this.youtubeUrl, this.spotifyUrl});
+  AudioVersion({required this.name, this.youtubeUrl, this.spotifyUrl, this.audioUrl});
 
   factory AudioVersion.fromMap(Map<String, dynamic> data) {
     return AudioVersion(
       name: data['name'] ?? 'Unknown',
       youtubeUrl: data['youtubeUrl'],
       spotifyUrl: data['spotifyUrl'],
+      audioUrl: data['audioUrl'],
     );
   }
 
@@ -20,6 +29,7 @@ class AudioVersion {
       'name': name,
       'youtubeUrl': youtubeUrl,
       'spotifyUrl': spotifyUrl,
+      'audioUrl': audioUrl,
     };
   }
 }
@@ -57,6 +67,7 @@ class Song {
   DateTime? songReleaseDate;
   String? songYoutubeUrl;
   String? songSpotifyUrl;
+  String? songAudioUrl;
 
   // Multi-artist fields
   List<String> originalArtists;
@@ -80,6 +91,7 @@ class Song {
     this.songReleaseDate,
     this.songYoutubeUrl,
     this.songSpotifyUrl,
+    this.songAudioUrl,
     this.songThumbnail,
     this.songThumbnailUrl,
     this.songLyrics,
@@ -104,6 +116,7 @@ class Song {
       songReleaseDate: data['releaseDate'] != null ? (data['releaseDate'] as dynamic).toDate() : null,
       songYoutubeUrl: data['youtubeUrl'],
       songSpotifyUrl: data['spotifyUrl'],
+      songAudioUrl: data['audioUrl'],
       songLyrics: data['lyrics'],
       songThumbnailUrl: data['thumbnailUrl'],
       songThumbnail: data['thumbnailUrl'] != null 
@@ -168,6 +181,41 @@ class Song {
   String? lyrics() {
     return songLyrics;
   }
+
+  static List<LyricLine> parseLyrics(String lyrics) {
+    final List<LyricLine> lines = [];
+    final RegExp regExp = RegExp(r'\[(\d+):(\d+\.?\d*)\](.*)');
+
+    for (var line in lyrics.split('\n')) {
+      final match = regExp.firstMatch(line);
+      if (match != null) {
+        final int minutes = int.parse(match.group(1)!);
+        final double seconds = double.parse(match.group(2)!);
+        final String text = match.group(3)!.trim();
+
+        final Duration startTime = Duration(
+          minutes: minutes,
+          seconds: seconds.toInt(),
+          milliseconds: ((seconds - seconds.toInt()) * 1000).toInt(),
+        );
+
+        lines.add(LyricLine(startTime: startTime, text: text));
+      } else if (line.trim().isNotEmpty) {
+        // Handle lines without timestamps if necessary, 
+        // maybe treat them as starting at 0 or continuing from previous.
+        // For karaoke, we usually ignore untimestamped lines or treat them as info.
+      }
+    }
+    // Sort lines by time just in case
+    lines.sort((a, b) => a.startTime.compareTo(b.startTime));
+    return lines;
+  }
+
+  static String stripTimestamps(String lyrics) {
+    // Regex for LRC timestamps: [mm:ss.xx] or [mm:ss]
+    final RegExp regExp = RegExp(r'\[\d+:\d+\.?\d*\]');
+    return lyrics.replaceAll(regExp, '').trim();
+  }
 }
 
 Song rightfully = Song(
@@ -179,100 +227,32 @@ Song rightfully = Song(
   songYoutubeUrl: 'https://youtu.be/-7BmO8Ocdi8',
   songSpotifyUrl:
       'https://open.spotify.com/track/1PPd67Amh9LXCR2u3dS5gk?si=1226d7cfac2f4dec',
+  songAudioUrl: 'https://www.soundhelix.com/examples/mp3/SoundHelix-Song-1.mp3',
   songThumbnail: Image.network(
     'https://i.scdn.co/image/ab67616d0000b27339f55d313059289288f1c0fc',
   ),
   originalArtists: ['Mili'],
   vocals: ['cassie wei'],
   arrangement: ['Yamato Kasai'],
-  songLyrics: r'''[Verse 1]
-Chained onto me
-My adolescent dreams
-Pulling, dragged me deep
-All my body exposed
-Marked up by your shadows
+  songLyrics: r'''[00:00.00] [Verse 1]
+[00:05.00] Chained onto me
+[00:08.00] My adolescent dreams
+[00:11.00] Pulling, dragged me deep
+[00:14.00] All my body exposed
+[00:17.00] Marked up by your shadows
 
-[Pre-Chorus]
-Tighten up
-Numb your senses
-No fairness is needed for pigs
-Laughters above
-Playful smiles
-Die gets rolled
+[00:20.00] [Pre-Chorus]
+[00:23.00] Tighten up
+[00:25.00] Numb your senses
+[00:27.00] No fairness is needed for pigs
+[00:30.00] Laughters above
+[00:32.00] Playful smiles
+[00:34.00] Die gets rolled
 
-[Chorus]
-Bathe in sorrow
-My tomorrow is built upon your flesh
-Slay the last of your kind
-To reclaim what’s rightfully mine
-
-[Post-Chorus]
-Each time we'll enter
-First time to make this
-Final dungeon
-無念な未来の
-I have a reason
-Don’t part the rivers
-Surround them off with their heads
-Christen my motive
-First time to notice
-Final dungeon
-蒸れてまようわ
-I hide among you
-Facing the fire
-{?}
-
-[Verse 2]
-I still dream of you
-Will you be disappointed that I’m not who I used to be
-Will you hold me tightly
-
-[Verse 1]
-Chained onto me
-My adolescent dreams
-Pulling, dragged me deep
-All my body exposed
-Marked up by your shadows
-
-[Verse 3]
-Piece by piece the tables turn and turn again
-In this eternal game
-Biscuits with clotted cream and milk tea
-Time to roll your d-20
-Gods nor demons ready to admit defeat
-
-[Pre-Chorus]
-Eat up
-Grind your teeth
-They’re not that much smarter than us
-Laughter's above
-Playful smiles
-Die gets rolled
-
-[Chorus]
-Swallow your fate
-Lubricate our blades with blood and tears
-And your piercing screams are music to celebrate
-Infiltrate, penetrate
-Soon we’ll have you destroyed
-Back to the old days
-Slay the last of your kind
-To reclaim what’s rightfully mine
-
-[Post-Chorus]
-Each time we'll enter
-First time to make this
-Final dungeon
-無念な未来の
-I have a reason
-Don’t part the rivers
-Surround them off with their heads
-Christen my motive
-First time to notice
-Final dungeon
-蒸れてまようわ
-I hide among you
-Facing my fire
-At night I’m dreaming
-願い夢の言の葉わ''',
+[00:36.00] [Chorus]
+[00:38.00] Bathe in sorrow
+[00:40.00] My tomorrow is built upon your flesh
+[00:44.00] Slay the last of your kind
+[00:47.00] To reclaim what’s rightfully mine
+''',
 );

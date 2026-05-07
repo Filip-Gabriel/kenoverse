@@ -2,42 +2,45 @@ import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:kenoverse/functionality/auth_service.dart';
 import 'package:kenoverse/screens/login_screen.dart';
-import 'package:kenoverse/functionality/bottom_app_bar.dart';
 import 'package:kenoverse/functionality/theme/theme_extensions.dart';
 import 'package:provider/provider.dart';
 import 'package:kenoverse/functionality/theme/theme_notifier.dart';
 import 'package:kenoverse/functionality/firestore_service.dart';
 import 'package:kenoverse/functionality/theme/app_constants.dart';
 
-class SettingScreen extends StatefulWidget {
-  const SettingScreen({super.key});
+class SettingsDialog extends StatefulWidget {
+  const SettingsDialog({super.key});
 
   @override
-  State<SettingScreen> createState() => _SettingScreenState();
+  State<SettingsDialog> createState() => _SettingsDialogState();
 }
 
-class _SettingScreenState extends State<SettingScreen> {
+class _SettingsDialogState extends State<SettingsDialog> {
   final AuthService _auth = AuthService();
   final FirestoreService _firestoreService = FirestoreService();
   final User? user = FirebaseAuth.instance.currentUser;
   final _usernameController = TextEditingController();
 
   bool _isUsernameSet = false;
+  String _username = '';
+  int? _userNumber;
 
   @override
   void initState() {
     super.initState();
     if (user != null) {
-      _loadUsername();
+      _loadUserData();
     }
   }
 
-  void _loadUsername() async {
-    String? name = await _firestoreService.getUsername(user!.uid);
-    if (name != null) {
+  void _loadUserData() async {
+    Map<String, dynamic>? data = await _firestoreService.getUserData(user!.uid);
+    if (mounted && data != null) {
       setState(() {
-        _usernameController.text = name;
-        _isUsernameSet = true;
+        _usernameController.text = data['username'] ?? '';
+        _username = data['username'] ?? '';
+        _userNumber = data['userNumber'];
+        _isUsernameSet = _username.isNotEmpty;
       });
     }
   }
@@ -50,128 +53,226 @@ class _SettingScreenState extends State<SettingScreen> {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(
-        title: const Text('Settings'),
-        centerTitle: true,
-      ),
-      body: ListView(
-        children: [
-          _buildSectionHeader('Account'),
-          if (user != null)
+    return Dialog(
+      insetPadding: context.paddingXL,
+      shape: RoundedRectangleBorder(borderRadius: context.radiusLG),
+      child: Container(
+        constraints: BoxConstraints(maxHeight: MediaQuery.of(context).size.height * 0.8),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
             Padding(
-              padding: context.paddingHorizontal(AppConstants.spacingMD),
+              padding: context.paddingMD,
               child: Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
-                  Expanded(
-                    child: TextField(
-                      controller: _usernameController,
-                      enabled: !_isUsernameSet,
-                      decoration: InputDecoration(
-                        labelText: 'Username',
-                        hintText: 'Enter a username',
-                        suffixIcon: _isUsernameSet ? const Icon(Icons.lock_outline, size: 16) : null,
-                        helperText: _isUsernameSet ? 'Username cannot be changed' : null,
+                  Text(
+                    'Settings',
+                    style: context.textTheme.titleLarge?.copyWith(fontWeight: FontWeight.bold),
+                  ),
+                  IconButton(
+                    icon: const Icon(Icons.close),
+                    onPressed: () => Navigator.pop(context),
+                  ),
+                ],
+              ),
+            ),
+            const Divider(height: 1),
+            Flexible(
+              child: ListView(
+                shrinkWrap: true,
+                padding: context.paddingVertical(AppConstants.spacingMD),
+                children: [
+                  _buildProfileHeader(),
+                  const Divider(indent: 20, endIndent: 20),
+                  _buildSectionHeader('Account'),
+                  if (user != null && !_isUsernameSet)
+                    Padding(
+                      padding: context.paddingHorizontal(AppConstants.spacingMD),
+                      child: Row(
+                        children: [
+                          Expanded(
+                            child: TextField(
+                              controller: _usernameController,
+                              decoration: const InputDecoration(
+                                labelText: 'Set Username',
+                                hintText: 'Enter a username',
+                                isDense: true,
+                              ),
+                            ),
+                          ),
+                          context.gapMD,
+                          ElevatedButton(
+                            onPressed: () async {
+                              if (_usernameController.text.isNotEmpty) {
+                                await _firestoreService.updateUsername(user!.uid, _usernameController.text);
+                                _loadUserData(); // Reload to get the number
+                                if (mounted) {
+                                  ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Username set!')));
+                                }
+                              }
+                            },
+                            child: const Text('Save'),
+                          ),
+                        ],
                       ),
                     ),
+                  ListTile(
+                    leading: const Icon(Icons.email_outlined),
+                    title: const Text('Email'),
+                    subtitle: Text(user?.email ?? 'Not logged in'),
                   ),
-                  if (!_isUsernameSet) ...[
-                    context.gapMD,
-                    ElevatedButton(
-                      onPressed: () async {
-                        if (_usernameController.text.isNotEmpty) {
-                          await _firestoreService.updateUsername(user!.uid, _usernameController.text);
-                          if (mounted) {
-                            setState(() => _isUsernameSet = true);
-                            ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Username set!')));
-                          }
-                        }
+                  if (user == null)
+                    ListTile(
+                      leading: const Icon(Icons.login),
+                      title: const Text('Sign In'),
+                      onTap: () {
+                        Navigator.pop(context); // Close dialog
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(builder: (context) => const LoginScreen()),
+                        );
                       },
-                      child: const Text('Save'),
+                    ),
+                  const Divider(indent: 20, endIndent: 20),
+                  _buildSectionHeader('Appearance'),
+                  Consumer<ThemeNotifier>(
+                    builder: (context, themeNotifier, child) {
+                      return Column(
+                        children: [
+                          RadioListTile<ThemeMode>(
+                            title: const Text('Follow System'),
+                            value: ThemeMode.system,
+                            groupValue: themeNotifier.themeMode,
+                            onChanged: (mode) => themeNotifier.setThemeMode(mode!),
+                          ),
+                          RadioListTile<ThemeMode>(
+                            title: const Text('Light Mode'),
+                            value: ThemeMode.light,
+                            groupValue: themeNotifier.themeMode,
+                            onChanged: (mode) => themeNotifier.setThemeMode(mode!),
+                          ),
+                          RadioListTile<ThemeMode>(
+                            title: const Text('Dark Mode'),
+                            value: ThemeMode.dark,
+                            groupValue: themeNotifier.themeMode,
+                            onChanged: (mode) => themeNotifier.setThemeMode(mode!),
+                          ),
+                        ],
+                      );
+                    },
+                  ),
+                  const Divider(indent: 20, endIndent: 20),
+                  _buildSectionHeader('Library'),
+                  ListTile(
+                    leading: const Icon(Icons.history),
+                    title: const Text('Clear History'),
+                    onTap: () {
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        const SnackBar(content: Text('History clearing coming soon!')),
+                      );
+                    },
+                  ),
+                  ListTile(
+                    leading: const Icon(Icons.favorite_border),
+                    title: const Text('Liked Songs'),
+                    onTap: () {},
+                  ),
+                  const Divider(indent: 20, endIndent: 20),
+                  _buildSectionHeader('Support & About'),
+                  ListTile(
+                    leading: const Icon(Icons.feedback_outlined),
+                    title: const Text('Send Feedback'),
+                    onTap: () {},
+                  ),
+                  ListTile(
+                    leading: const Icon(Icons.privacy_tip_outlined),
+                    title: const Text('Privacy Policy'),
+                    onTap: () {},
+                  ),
+                  const ListTile(
+                    leading: Icon(Icons.info_outline),
+                    title: Text('Version'),
+                    trailing: Text('1.0.0'),
+                  ),
+                  if (user != null) ...[
+                    const Divider(indent: 20, endIndent: 20),
+                    Padding(
+                      padding: context.paddingMD,
+                      child: OutlinedButton.icon(
+                        onPressed: () async {
+                          await _auth.signOut();
+                          if (mounted) Navigator.pop(context);
+                        },
+                        icon: const Icon(Icons.logout, color: Colors.red),
+                        label: const Text('Sign Out', style: TextStyle(color: Colors.red)),
+                        style: OutlinedButton.styleFrom(
+                          side: const BorderSide(color: Colors.red),
+                          padding: context.paddingVertical(AppConstants.spacingMD),
+                        ),
+                      ),
                     ),
                   ],
                 ],
               ),
             ),
-          ListTile(
-            leading: const Icon(Icons.person_outline),
-            title: Text(user != null ? 'Logged in as' : 'Not logged in'),
-            subtitle: Text(user?.email ?? 'Sign in to sync your data'),
-            trailing: user != null
-                ? TextButton(
-                    onPressed: () async {
-                      await _auth.signOut();
-                      if (mounted) setState(() {});
-                    },
-                    child: const Text('Sign Out', style: TextStyle(color: Colors.red)),
-                  )
-                : TextButton(
-                    onPressed: () {
-                      Navigator.push(
-                        context,
-                        MaterialPageRoute(builder: (context) => LoginScreen()),
-                      );
-                    },
-                    child: const Text('Sign In'),
-                  ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildProfileHeader() {
+    return Container(
+      padding: context.paddingVertical(AppConstants.spacingLG),
+      child: Column(
+        children: [
+          CircleAvatar(
+            radius: 40,
+            backgroundColor: context.colorScheme.primaryContainer,
+            child: Icon(
+              user == null ? Icons.login : Icons.person_outline,
+              size: 40,
+              color: context.colorScheme.onPrimaryContainer,
+            ),
           ),
-          const Divider(),
-          _buildSectionHeader('Appearance'),
-          Consumer<ThemeNotifier>(
-            builder: (context, themeNotifier, child) {
-              return Column(
-                children: [
-                  RadioListTile<ThemeMode>(
-                    title: const Text('Follow System'),
-                    value: ThemeMode.system,
-                    groupValue: themeNotifier.themeMode,
-                    onChanged: (mode) => themeNotifier.setThemeMode(mode!),
-                  ),
-                  RadioListTile<ThemeMode>(
-                    title: const Text('Light Mode'),
-                    value: ThemeMode.light,
-                    groupValue: themeNotifier.themeMode,
-                    onChanged: (mode) => themeNotifier.setThemeMode(mode!),
-                  ),
-                  RadioListTile<ThemeMode>(
-                    title: const Text('Dark Mode'),
-                    value: ThemeMode.dark,
-                    groupValue: themeNotifier.themeMode,
-                    onChanged: (mode) => themeNotifier.setThemeMode(mode!),
-                  ),
-                ],
-              );
-            },
+          context.gapMD,
+          Text(
+            user == null ? 'Not logged in' : (_username.isNotEmpty ? _username : 'User'),
+            style: context.textTheme.headlineSmall?.copyWith(
+              fontWeight: FontWeight.bold,
+              fontSize: 20,
+            ),
           ),
-          const Divider(),
-          _buildSectionHeader('About'),
-          const ListTile(
-            leading: Icon(Icons.info_outline),
-            title: Text('Version'),
-            trailing: Text('1.0.0'),
-          ),
-          ListTile(
-            leading: const Icon(Icons.code),
-            title: const Text('Developer'),
-            subtitle: const Text('Monarch'),
-            onTap: () {},
-          ),
+          if (user != null && _userNumber != null)
+            Text(
+              'Nekovert #$_userNumber',
+              style: context.textTheme.bodySmall?.copyWith(
+                color: context.colorScheme.secondary.withValues(alpha: 0.7),
+              ),
+            ),
+          if (user != null && _username.isEmpty)
+            Text(
+              'Username not set',
+              style: context.textTheme.bodySmall?.copyWith(
+                color: context.colorScheme.secondary,
+              ),
+            ),
         ],
       ),
-      bottomNavigationBar: BottomBar.bottomAppBar(context),
     );
   }
 
   Widget _buildSectionHeader(String title) {
     return Padding(
-      padding: const EdgeInsets.fromLTRB(16, 16, 16, 8),
+      padding: const EdgeInsets.fromLTRB(20, 16, 20, 8),
       child: Text(
         title.toUpperCase(),
         style: TextStyle(
-          fontSize: 12,
+          fontSize: 11,
           fontWeight: FontWeight.bold,
           color: context.colorScheme.primary,
-          letterSpacing: 1.2,
+          letterSpacing: 1.1,
         ),
       ),
     );

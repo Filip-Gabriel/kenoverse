@@ -3,6 +3,8 @@ import 'package:kenoverse/functionality/lyrics.dart';
 import 'package:kenoverse/functionality/firestore_service.dart';
 import 'package:kenoverse/functionality/theme/theme_extensions.dart';
 
+enum AddMode { audio, lyrics }
+
 class AddVersionScreen extends StatefulWidget {
   final Song song;
   const AddVersionScreen({super.key, required this.song});
@@ -24,10 +26,21 @@ class _AddVersionScreenState extends State<AddVersionScreen> {
   final _lyricLanguageController = TextEditingController();
   final _lyricsController = TextEditingController();
 
-  bool _isAddingAudio = true;
+  AddMode _currentMode = AddMode.audio;
+
+  @override
+  void dispose() {
+    _audioNameController.dispose();
+    _audioNameController.dispose();
+    _audioYoutubeController.dispose();
+    _audioSpotifyController.dispose();
+    _lyricLanguageController.dispose();
+    _lyricsController.dispose();
+    super.dispose();
+  }
 
   void _submit() async {
-    if (_isAddingAudio) {
+    if (_currentMode == AddMode.audio) {
       if (_audioNameController.text.isEmpty) return;
       
       final newVersion = AudioVersion(
@@ -40,7 +53,7 @@ class _AddVersionScreenState extends State<AddVersionScreen> {
       await _firestoreService.updateSong(widget.song.id!, {
         'audioVersions': updatedVersions.map((v) => v.toMap()).toList(),
       });
-    } else {
+    } else if (_currentMode == AddMode.lyrics) {
       if (_lyricLanguageController.text.isEmpty || _lyricsController.text.isEmpty) return;
 
       final newVersion = LyricVersion(
@@ -82,16 +95,18 @@ class _AddVersionScreenState extends State<AddVersionScreen> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            SegmentedButton<bool>(
-              segments: const [
-                ButtonSegment(value: true, label: Text('Audio Version'), icon: Icon(Icons.audiotrack)),
-                ButtonSegment(value: false, label: Text('Lyric Version'), icon: Icon(Icons.lyrics)),
-              ],
-              selected: {_isAddingAudio},
-              onSelectionChanged: (val) => setState(() => _isAddingAudio = val.first),
+            Center(
+              child: SegmentedButton<AddMode>(
+                segments: const [
+                  ButtonSegment(value: AddMode.audio, label: Text('Audio'), icon: Icon(Icons.audiotrack)),
+                  ButtonSegment(value: AddMode.lyrics, label: Text('Lyrics'), icon: Icon(Icons.lyrics)),
+                ],
+                selected: {_currentMode},
+                onSelectionChanged: (val) => setState(() => _currentMode = val.first),
+              ),
             ),
             context.gapLG,
-            if (_isAddingAudio) ...[
+            if (_currentMode == AddMode.audio) ...[
               Autocomplete<String>(
                 optionsBuilder: (TextEditingValue textEditingValue) {
                   return _suggestedAudioNames.where((String option) {
@@ -140,7 +155,11 @@ class _AddVersionScreenState extends State<AddVersionScreen> {
                 },
               ),
               context.gapMD,
-              TextField(controller: _lyricsController, maxLines: 10, decoration: _inputDecoration('Lyrics')),
+              TextField(
+                controller: _lyricsController, 
+                maxLines: 8, 
+                decoration: _inputDecoration('Lyrics'),
+              ),
             ],
             context.gapXL,
             SizedBox(

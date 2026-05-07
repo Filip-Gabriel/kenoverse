@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:kenoverse/functionality/ui_elements.dart';
 import 'package:kenoverse/screens/new_song_screen.dart';
 import 'package:kenoverse/screens/home_screen.dart';
-import 'package:kenoverse/screens/setting_screen.dart';
 import 'package:kenoverse/screens/playlist_screen.dart';
 import 'package:kenoverse/screens/artworks_screen.dart';
 import 'package:kenoverse/functionality/theme/app_constants.dart';
@@ -51,17 +50,6 @@ class BottomBar {
                 Navigator.pushReplacement(
                   context,
                   MaterialPageRoute(builder: (context) => const ArtworksScreen()),
-                );
-              },
-              padding: EdgeInsets.zero,
-              constraints: const BoxConstraints(),
-            ),
-            IconButton(
-              icon: const Icon(Icons.settings),
-              onPressed: () {
-                Navigator.pushReplacement(
-                  context,
-                  MaterialPageRoute(builder: (context) => const SettingScreen()),
                 );
               },
               padding: EdgeInsets.zero,

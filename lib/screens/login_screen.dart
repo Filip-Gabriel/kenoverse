@@ -20,6 +20,7 @@ class _LoginScreenState extends State<LoginScreen> {
   String error = '';
   bool loading = false;
   bool isRegistering = false; // Toggle between Login and Register
+  bool obscurePassword = true; // Toggle password visibility
 
   @override
   Widget build(BuildContext context) {
@@ -71,10 +72,20 @@ class _LoginScreenState extends State<LoginScreen> {
               ),
               context.gapLG,
               TextFormField(
-                obscureText: true,
-                decoration: const InputDecoration(
+                obscureText: obscurePassword,
+                decoration: InputDecoration(
                   labelText: 'Password',
-                  prefixIcon: Icon(Icons.lock_outline),
+                  prefixIcon: const Icon(Icons.lock_outline),
+                  suffixIcon: IconButton(
+                    icon: Icon(
+                      obscurePassword ? Icons.visibility_off : Icons.visibility,
+                    ),
+                    onPressed: () {
+                      setState(() {
+                        obscurePassword = !obscurePassword;
+                      });
+                    },
+                  ),
                 ),
                 validator: (val) => val!.length < 6 ? 'Enter a password 6+ chars long' : null,
                 onChanged: (val) => setState(() => password = val),
@@ -83,8 +94,7 @@ class _LoginScreenState extends State<LoginScreen> {
               SizedBox(
                 width: double.infinity,
                 child: FilledButton(
-                  child: Text(isRegistering ? 'Register' : 'Sign In'),
-                  onPressed: () async {
+                  onPressed: loading ? null : () async {
                     if (_formKey.currentState!.validate()) {
                       setState(() => loading = true);
                       dynamic result;
@@ -95,33 +105,51 @@ class _LoginScreenState extends State<LoginScreen> {
                       }
                       
                       if (result == null) {
-                        setState(() {
-                          error = isRegistering 
-                            ? 'Could not register with those credentials' 
-                            : 'Could not sign in with those credentials';
-                          loading = false;
-                        });
+                        if (mounted) {
+                          setState(() {
+                            error = isRegistering 
+                              ? 'Could not register with those credentials' 
+                              : 'Could not sign in with those credentials';
+                            loading = false;
+                          });
+                        }
                       } else {
-                        MaterialPageRoute(builder: (context) => const HomeScreen());
+                        if (mounted) {
+                          if (Navigator.canPop(context)) {
+                            Navigator.pop(context);
+                          } else {
+                            Navigator.pushReplacement(
+                              context,
+                              MaterialPageRoute(builder: (context) => const HomeScreen()),
+                            );
+                          }
+                        }
                       }
                     }
                   },
+                  child: loading 
+                    ? const SizedBox(height: 20, width: 20, child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white))
+                    : Text(isRegistering ? 'Register' : 'Sign In'),
                 ),
               ),
+              if (error.isNotEmpty) ...[
+                context.gapMD,
+                Text(
+                  error,
+                  style: TextStyle(color: context.colorScheme.error, fontSize: 14.0),
+                ),
+              ],
               context.gapMD,
-              Text(
-                error,
-                style: TextStyle(color: context.colorScheme.error, fontSize: 14.0),
-              ),
               TextButton(
+                onPressed: () {
+                  setState(() {
+                    isRegistering = !isRegistering;
+                    error = '';
+                  });
+                },
                 child: Text(isRegistering 
                   ? 'Already have an account? Sign In' 
                   : 'New here? Create an Account'),
-                onPressed: () {
-                  setState(() {
-                    isRegistering=!isRegistering;
-                  });
-                },
               ),
             ],
           ),

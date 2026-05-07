@@ -3,10 +3,9 @@ import 'package:kenoverse/screens/lyric_screen.dart';
 import 'package:kenoverse/functionality/bottom_app_bar.dart';
 import 'package:kenoverse/functionality/ui_elements.dart';
 import 'package:kenoverse/functionality/lyrics.dart';
-import 'package:kenoverse/functionality/auth_service.dart';
 import 'package:kenoverse/functionality/firestore_service.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
-import 'package:kenoverse/screens/login_screen.dart';
+import 'package:kenoverse/screens/setting_screen.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:kenoverse/functionality/theme/theme_extensions.dart';
 
@@ -62,37 +61,11 @@ class _HomeScreenState extends State<HomeScreen> {
                       ],
                     ),
                     GestureDetector(
-                      onTap: () async {
-                        User? user = FirebaseAuth.instance.currentUser;
-                        if (user == null) {
-                          Navigator.push(
-                            context,
-                            MaterialPageRoute(builder: (context) => const LoginScreen()),
-                          );
-                        } else {
-                          // Show logout confirmation
-                          showDialog(
-                            context: context,
-                            builder: (context) => AlertDialog(
-                              title: const Text('Account'),
-                              content: Text('Logged in as ${user.email}'),
-                              actions: [
-                                TextButton(
-                                  onPressed: () => Navigator.pop(context),
-                                  child: const Text('Close'),
-                                ),
-                                TextButton(
-                                  onPressed: () async {
-                                    await AuthService().signOut();
-                                    if (context.mounted) Navigator.pop(context);
-                                    setState(() {}); // Refresh to show logged out state
-                                  },
-                                  child: const Text('Sign Out', style: TextStyle(color: Colors.red)),
-                                ),
-                              ],
-                            ),
-                          );
-                        }
+                      onTap: () {
+                        showDialog(
+                          context: context,
+                          builder: (context) => const SettingsDialog(),
+                        );
                       },
                       child: CircleAvatar(
                         radius: 24,
@@ -383,9 +356,10 @@ class _HomeScreenState extends State<HomeScreen> {
                   ],
                 ),
               ),
-              Icon(
-                Icons.more_vert,
+              IconButton(
+                icon: const Icon(Icons.more_vert),
                 color: context.colorScheme.onSurfaceVariant,
+                onPressed: () => SongActions.showSongMenu(context, song),
               ),
             ],
           ),

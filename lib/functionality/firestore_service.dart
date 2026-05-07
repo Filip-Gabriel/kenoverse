@@ -15,10 +15,39 @@ class FirestoreService {
 
   // User methods
   Future<void> updateUsername(String uid, String username) async {
+    // Check if user already has a number
+    DocumentSnapshot userDoc = await usersCollection.doc(uid).get();
+    Map<String, dynamic>? data = userDoc.data() as Map<String, dynamic>?;
+    
+    int? userNumber = data?['userNumber'];
+    
+    userNumber ??= await _getNextUserNumber();
+
     await usersCollection.doc(uid).set({
       'username': username,
+      'userNumber': userNumber,
       'updatedAt': FieldValue.serverTimestamp(),
     }, SetOptions(merge: true));
+  }
+
+  Future<int> _getNextUserNumber() async {
+    DocumentReference counterRef = FirebaseFirestore.instance.collection('counters').doc('users');
+    
+    return await FirebaseFirestore.instance.runTransaction((transaction) async {
+      DocumentSnapshot snapshot = await transaction.get(counterRef);
+
+      int newCount = (snapshot.data() as Map<String, dynamic>)['count'] + 1;
+      transaction.update(counterRef, {'count': newCount});
+      return newCount;
+    });
+  }
+
+  Future<Map<String, dynamic>?> getUserData(String uid) async {
+    DocumentSnapshot doc = await usersCollection.doc(uid).get();
+    if (doc.exists) {
+      return doc.data() as Map<String, dynamic>?;
+    }
+    return null;
   }
 
   Future<String?> getUsername(String uid) async {
@@ -45,6 +74,14 @@ class FirestoreService {
   Future<void> updateSong(String id, Map<String, dynamic> songData) async {
     try {
       await songsCollection.doc(id).update(songData);
+    } catch (e) {
+      print(e.toString());
+    }
+  }
+
+  Future<void> deleteSong(String id) async {
+    try {
+      await songsCollection.doc(id).delete();
     } catch (e) {
       print(e.toString());
     }

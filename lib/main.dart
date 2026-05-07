@@ -33,14 +33,4 @@ class Kenoverse extends StatelessWidget {
     );
   }
 }
-//todo expand the settings menu
-//todo in the login screen, add a button that will reveal the password written
-//todo fix the issues happenning when you sign out using the settings menu
-//todo move the settings menu to the profile icon one
-//todo remove the disabled textfield that shows the users username(replace it with something more aestethically pleasing)
-//todo once a user signs up, they get assigned an id that will show under their username, ever so slightly dimmed. it should be formatted like "Nekovert #(the next number from the one of the one before him.)"
-//todo add karaoke function(the user will hit the play button which will start a timer, and based on how the lyrics are configured to the timestamp, the current ones will get highlighted, while the others will be dimmed)
-//todo expand karaoke function. you can now link an audio file to a song and once you hit play, the respective audio track will also start playing
-//todo expand karaoke function. add youtube preview and make it so that you can play the youtube mv in a popup in the app
-//allabumscreen: remove the bottom bar an replace with top appbar?
-//allabumscreen: wrap it in a safe area?
+// todo make it so that the app will download song and update its internal database from firebase when it connects to the internet
