@@ -26,6 +26,7 @@ class Kenoverse extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
+      debugShowCheckedModeBanner: false,
       theme: CustomTheme.lightTheme(),
       darkTheme: CustomTheme.darkTheme(),
       themeMode: Provider.of<ThemeNotifier>(context).themeMode,
@@ -34,3 +35,4 @@ class Kenoverse extends StatelessWidget {
   }
 }
 // todo make it so that the app will download song and update its internal database from firebase when it connects to the internet
+// todo instad of the greeting always being "keno" make it so that it says the users username
