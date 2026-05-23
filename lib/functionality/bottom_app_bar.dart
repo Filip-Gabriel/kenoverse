@@ -1,5 +1,7 @@
+// Defines the layout and navigation logic for the mobile bottom application bar.
+// Provides shortcuts to Home, Search, Playlists, Gallery, and Upload.
 import 'package:flutter/material.dart';
-import 'package:kenoverse/functionality/ui_elements.dart';
+import 'package:kenoverse/widgets/keno_search_bar.dart';
 import 'package:kenoverse/screens/new_song_screen.dart';
 import 'package:kenoverse/screens/home_screen.dart';
 import 'package:kenoverse/screens/playlist_screen.dart';

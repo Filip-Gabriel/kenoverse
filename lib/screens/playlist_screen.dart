@@ -1,3 +1,5 @@
+// Lists all user-created playlists and provides a quick link to 'Liked Songs'.
+// Includes functionality to create new playlists.
 import 'package:flutter/material.dart';
 import 'package:kenoverse/functionality/playlist_model.dart';
 import 'package:kenoverse/functionality/firestore_service.dart';
@@ -7,7 +9,6 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:kenoverse/screens/playlist_detail_screen.dart';
 import 'package:kenoverse/screens/liked_songs_screen.dart';
-import 'package:kenoverse/functionality/bottom_app_bar.dart';
 
 class PlaylistScreen extends StatefulWidget {
   const PlaylistScreen({super.key});
@@ -158,7 +159,6 @@ class _PlaylistScreenState extends State<PlaylistScreen> {
           ),
         ],
       ),
-      bottomNavigationBar: BottomBar.bottomAppBar(context),
     );
   }
 }

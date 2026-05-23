@@ -1,10 +1,11 @@
+// Displays an artist's profile, including their bio, social links, and works.
+// Allows users to 'claim' unowned profiles and authorized users to edit them.
 import 'package:flutter/material.dart';
 import 'package:kenoverse/functionality/artist_model.dart';
 import 'package:kenoverse/functionality/firestore_service.dart';
 import 'package:kenoverse/functionality/theme/theme_extensions.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
-import 'package:kenoverse/functionality/bottom_app_bar.dart';
 
 import 'package:kenoverse/functionality/lyrics.dart';
 import 'package:kenoverse/screens/lyric_screen.dart';
@@ -113,7 +114,6 @@ class _ArtistProfileScreenState extends State<ArtistProfileScreen> {
               ],
             ),
           ),
-          bottomNavigationBar: BottomBar.bottomAppBar(context),
         );
       },
     );

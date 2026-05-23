@@ -1,3 +1,5 @@
+// Handles user authentication, allowing users to sign in or register.
+// Integrates with AuthService for Firebase Authentication.
 import 'package:flutter/material.dart';
 import 'package:kenoverse/functionality/auth_service.dart';
 import 'package:kenoverse/functionality/theme/theme_extensions.dart';
@@ -21,6 +23,19 @@ class _LoginScreenState extends State<LoginScreen> {
   bool loading = false;
   bool isRegistering = false; // Toggle between Login and Register
   bool obscurePassword = true; // Toggle password visibility
+
+  /// Finalizes the auth process by navigating to the home screen.
+  void _navigateToHome() {
+    if (!context.mounted) return;
+    if (Navigator.canPop(context)) {
+      Navigator.pop(context);
+    } else {
+      Navigator.pushReplacement(
+        context,
+        MaterialPageRoute(builder: (context) => const HomeScreen()),
+      );
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -105,7 +120,7 @@ class _LoginScreenState extends State<LoginScreen> {
                       }
                       
                       if (result == null) {
-                        if (mounted) {
+                        if (context.mounted) {
                           setState(() {
                             error = isRegistering 
                               ? 'Could not register with those credentials' 
@@ -114,16 +129,7 @@ class _LoginScreenState extends State<LoginScreen> {
                           });
                         }
                       } else {
-                        if (mounted) {
-                          if (Navigator.canPop(context)) {
-                            Navigator.pop(context);
-                          } else {
-                            Navigator.pushReplacement(
-                              context,
-                              MaterialPageRoute(builder: (context) => const HomeScreen()),
-                            );
-                          }
-                        }
+                        _navigateToHome();
                       }
                     }
                   },

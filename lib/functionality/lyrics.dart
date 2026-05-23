@@ -1,5 +1,11 @@
+// This file defines the core data models for songs, lyrics, and audio versions.
+// It handles song metadata, LRC lyric parsing, and serialization.
 import 'package:flutter/material.dart';
+import 'package:hive/hive.dart';
 
+part 'lyrics.g.dart';
+
+/// Represents a single line of lyrics with a starting timestamp.
 class LyricLine {
   final Duration startTime;
   final String text;
@@ -7,10 +13,16 @@ class LyricLine {
   LyricLine({required this.startTime, required this.text});
 }
 
+/// Represents an alternative audio mix or version of a song (e.g., "Acoustic", "Remix").
+@HiveType(typeId: 1)
 class AudioVersion {
-  final String name; // e.g., "Original", "Sped Up", "Slowed"
+  @HiveField(0)
+  final String name;
+  @HiveField(1)
   final String? youtubeUrl;
+  @HiveField(2)
   final String? spotifyUrl;
+  @HiveField(3)
   final String? audioUrl;
 
   AudioVersion({required this.name, this.youtubeUrl, this.spotifyUrl, this.audioUrl});
@@ -34,8 +46,12 @@ class AudioVersion {
   }
 }
 
+/// Represents a specific translation or transliteration of a song's lyrics.
+@HiveType(typeId: 2)
 class LyricVersion {
+  @HiveField(0)
   final String language; // e.g., "English", "Japanese", "Romanized"
+  @HiveField(1)
   final String lyrics;
 
   LyricVersion({required this.language, required this.lyrics});
@@ -55,32 +71,59 @@ class LyricVersion {
   }
 }
 
-class Song {
+/// The primary data model for a Song in KenoVerse.
+/// Contains metadata, contributors, streaming links, and lyrics.
+@HiveType(typeId: 0)
+class Song extends HiveObject {
+  @HiveField(0)
   String? id; // Firestore document ID
+  @HiveField(1)
   late String songTitle;
-  String? songLyrics; // Main/Default lyrics
+  @HiveField(2)
+  String? songLyrics; // Main/Default lyrics (original language)
   Image? songThumbnail;
+  @HiveField(3)
   String? songThumbnailUrl;
+  @HiveField(4)
   bool isDraft;
+  @HiveField(5)
   String? songLanguage;
+  @HiveField(6)
   List<String> songAlbums;
+  @HiveField(7)
   DateTime? songReleaseDate;
+  @HiveField(8)
   String? songYoutubeUrl;
+  @HiveField(9)
   String? songSpotifyUrl;
+  @HiveField(10)
   String? songAudioUrl;
 
-  // Multi-artist fields
+  // Multi-artist/Contributor fields
+  @HiveField(11)
   List<String> originalArtists;
+  @HiveField(12)
   List<String> vocals;
+  @HiveField(13)
   List<String> featuredArtists;
+  @HiveField(14)
   List<String> audioPreedit;
+  @HiveField(15)
   List<String> arrangement;
+  @HiveField(16)
   List<String> artworkBy;
+  @HiveField(17)
   List<String> videoBy;
 
-  // Versions
+  // Lists of alternative versions
+  @HiveField(18)
   List<AudioVersion>? audioVersions;
+  @HiveField(19)
   List<LyricVersion>? lyricVersions;
+
+  // Local storage fields
+  @HiveField(20)
+  String? localAudioPath;
 
   Song(
     this.songTitle, {
@@ -104,8 +147,13 @@ class Song {
     this.videoBy = const [],
     this.audioVersions = const [],
     this.lyricVersions = const [],
+    this.localAudioPath,
   });
 
+  /// The standard placeholder image used when no thumbnail is available.
+  static Image get defaultThumbnail => Image.asset('images/callofsilence.jpg');
+
+  /// Creates a Song object from a Firestore document map.
   factory Song.fromFirestore(Map<String, dynamic> data, String documentId) {
     return Song(
       data['title'] ?? 'Unknown Title',
@@ -121,7 +169,7 @@ class Song {
       songThumbnailUrl: data['thumbnailUrl'],
       songThumbnail: data['thumbnailUrl'] != null 
         ? Image.network(data['thumbnailUrl']) 
-        : Image.asset('images/callofsilence.jpg'),
+        : defaultThumbnail,
       originalArtists: List<String>.from(data['originalArtists'] ?? []),
       vocals: List<String>.from(data['vocals'] ?? []),
       featuredArtists: List<String>.from(data['featuredArtists'] ?? []),
@@ -135,55 +183,27 @@ class Song {
       lyricVersions: (data['lyricVersions'] as List? ?? [])
           .map((v) => LyricVersion.fromMap(Map<String, dynamic>.from(v)))
           .toList(),
+      localAudioPath: data['localAudioPath'], // Usually not from Firestore, but included for completeness
     );
   }
 
-  void addLyrics(String lyrics) {
-    songLyrics = lyrics;
-  }
+  // --- Convenience Getters ---
 
-  void addThumbnail(Image thumbnail) {
-    songThumbnail = thumbnail;
-  }
+  String title() => songTitle;
+  String? language() => songLanguage;
+  List<String> albums() => songAlbums;
+  DateTime? releaseDate() => songReleaseDate;
+  String? youtubeUrl() => songYoutubeUrl;
+  String? spotifyUrl() => songSpotifyUrl;
+  Image? thumbnail() => songThumbnail;
+  String? lyrics() => songLyrics;
 
-  void markAsPublic() {
-    isDraft = false;
-  }
-
-  String title() {
-    return songTitle;
-  }
-
-  String? language() {
-    return songLanguage;
-  }
-
-  List<String> albums() {
-    return songAlbums;
-  }
-
-  DateTime? releaseDate() {
-    return songReleaseDate;
-  }
-
-  String? youtubeUrl() {
-    return songYoutubeUrl;
-  }
-
-  String? spotifyUrl() {
-    return songSpotifyUrl;
-  }
-
-  Image? thumbnail() {
-    return songThumbnail;
-  }
-
-  String? lyrics() {
-    return songLyrics;
-  }
-
+  /// Parses a raw LRC (LyriC) string into a list of [LyricLine] objects.
+  /// Expects lines in the format: [mm:ss.xx] Lyric text
   static List<LyricLine> parseLyrics(String lyrics) {
     final List<LyricLine> lines = [];
+    // Regex matches [minutes:seconds] followed by the line text.
+    // Supports milliseconds/fractions of seconds.
     final RegExp regExp = RegExp(r'\[(\d+):(\d+\.?\d*)\](.*)');
 
     for (var line in lyrics.split('\n')) {
@@ -193,6 +213,7 @@ class Song {
         final double seconds = double.parse(match.group(2)!);
         final String text = match.group(3)!.trim();
 
+        // Convert the timestamp groups into a Duration object.
         final Duration startTime = Duration(
           minutes: minutes,
           seconds: seconds.toInt(),
@@ -200,59 +221,16 @@ class Song {
         );
 
         lines.add(LyricLine(startTime: startTime, text: text));
-      } else if (line.trim().isNotEmpty) {
-        // Handle lines without timestamps if necessary, 
-        // maybe treat them as starting at 0 or continuing from previous.
-        // For karaoke, we usually ignore untimestamped lines or treat them as info.
       }
     }
-    // Sort lines by time just in case
+    // Ensure the lyrics are sorted by time for accurate scrolling.
     lines.sort((a, b) => a.startTime.compareTo(b.startTime));
     return lines;
   }
 
+  /// Removes all [mm:ss.xx] timestamps from an LRC string, returning plain text.
   static String stripTimestamps(String lyrics) {
-    // Regex for LRC timestamps: [mm:ss.xx] or [mm:ss]
     final RegExp regExp = RegExp(r'\[\d+:\d+\.?\d*\]');
     return lyrics.replaceAll(regExp, '').trim();
   }
 }
-
-Song rightfully = Song(
-  'Rightfully',
-  isDraft: false,
-  songLanguage: 'english',
-  songAlbums: ['Rightfully (From ”Goblin Slayer”)'],
-  songReleaseDate: DateTime(2018, 12, 15),
-  songYoutubeUrl: 'https://youtu.be/-7BmO8Ocdi8',
-  songSpotifyUrl:
-      'https://open.spotify.com/track/1PPd67Amh9LXCR2u3dS5gk?si=1226d7cfac2f4dec',
-  songAudioUrl: 'https://www.soundhelix.com/examples/mp3/SoundHelix-Song-1.mp3',
-  songThumbnail: Image.network(
-    'https://i.scdn.co/image/ab67616d0000b27339f55d313059289288f1c0fc',
-  ),
-  originalArtists: ['Mili'],
-  vocals: ['cassie wei'],
-  arrangement: ['Yamato Kasai'],
-  songLyrics: r'''[00:00.00] [Verse 1]
-[00:05.00] Chained onto me
-[00:08.00] My adolescent dreams
-[00:11.00] Pulling, dragged me deep
-[00:14.00] All my body exposed
-[00:17.00] Marked up by your shadows
-
-[00:20.00] [Pre-Chorus]
-[00:23.00] Tighten up
-[00:25.00] Numb your senses
-[00:27.00] No fairness is needed for pigs
-[00:30.00] Laughters above
-[00:32.00] Playful smiles
-[00:34.00] Die gets rolled
-
-[00:36.00] [Chorus]
-[00:38.00] Bathe in sorrow
-[00:40.00] My tomorrow is built upon your flesh
-[00:44.00] Slay the last of your kind
-[00:47.00] To reclaim what’s rightfully mine
-''',
-);

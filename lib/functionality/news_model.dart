@@ -1,3 +1,5 @@
+// Data model representing a news article in the KenoVerse app.
+// Handles Firestore document conversion and serialization.
 import 'package:cloud_firestore/cloud_firestore.dart';
 
 class NewsArticle {

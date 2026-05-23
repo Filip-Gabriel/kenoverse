@@ -1,9 +1,11 @@
+// A community gallery for viewing and submitting fanart.
+// Displays artworks in a responsive grid and provides a full-screen viewer.
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:kenoverse/functionality/fanart_model.dart';
 import 'package:kenoverse/functionality/firestore_service.dart';
+import 'package:kenoverse/functionality/theme/app_constants.dart';
 import 'package:kenoverse/functionality/theme/theme_extensions.dart';
-import 'package:kenoverse/functionality/bottom_app_bar.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 
 class ArtworksScreen extends StatefulWidget {
@@ -15,6 +17,14 @@ class ArtworksScreen extends StatefulWidget {
 
 class _ArtworksScreenState extends State<ArtworksScreen> {
   final FirestoreService _firestoreService = FirestoreService();
+
+  int _getCrossAxisCount(BuildContext context) {
+    double width = MediaQuery.of(context).size.width;
+    if (width > 1200) return 6;
+    if (width > 900) return 4;
+    if (width > 600) return 3;
+    return 2;
+  }
 
   void _showUploadDialog() {
     final user = FirebaseAuth.instance.currentUser;
@@ -67,10 +77,10 @@ class _ArtworksScreenState extends State<ArtworksScreen> {
 
           return GridView.builder(
             padding: context.paddingMD,
-            gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-              crossAxisCount: 2,
-              crossAxisSpacing: 10,
-              mainAxisSpacing: 10,
+            gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+              crossAxisCount: _getCrossAxisCount(context),
+              crossAxisSpacing: AppConstants.spacingSM,
+              mainAxisSpacing: AppConstants.spacingSM,
               childAspectRatio: 0.8, // Slightly taller for credits
             ),
             itemCount: fanarts.length,
@@ -114,7 +124,7 @@ class _ArtworksScreenState extends State<ArtworksScreen> {
                       ),
                     ),
                     Padding(
-                      padding: const EdgeInsets.all(8.0),
+                      padding: context.paddingSM,
                       child: Text(
                         'by ${art.artistName ?? 'Anonymous'}',
                         style: context.textTheme.labelSmall,
@@ -134,7 +144,6 @@ class _ArtworksScreenState extends State<ArtworksScreen> {
         icon: const Icon(Icons.add_photo_alternate_outlined),
         label: const Text('Submit Art'),
       ),
-      bottomNavigationBar: BottomBar.bottomAppBar(context),
     );
   }
 }

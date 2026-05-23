@@ -1,3 +1,5 @@
+// Data model for community-uploaded fanart and illustrations.
+// Links artwork to specific songs and uploaders.
 import 'package:cloud_firestore/cloud_firestore.dart';
 
 class Fanart {

@@ -1,16 +1,20 @@
+// The primary landing page of the application.
+// Displays a personalized greeting, news carousel, featured albums,
+// recently accessed songs, and recent releases.
 import 'package:flutter/material.dart' hide SearchBar;
-import 'package:kenoverse/screens/lyric_screen.dart';
-import 'package:kenoverse/functionality/bottom_app_bar.dart';
-import 'package:kenoverse/functionality/ui_elements.dart';
+import 'package:kenoverse/widgets/album_card.dart';
 import 'package:kenoverse/functionality/lyrics.dart';
 import 'package:kenoverse/functionality/firestore_service.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:kenoverse/screens/setting_screen.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:provider/provider.dart';
+import 'package:kenoverse/functionality/theme/app_constants.dart';
 import 'package:kenoverse/functionality/theme/theme_extensions.dart';
-
 import 'package:kenoverse/functionality/news_model.dart';
+import 'package:kenoverse/functionality/sync_service.dart';
 import 'package:kenoverse/screens/all_albums_screen.dart';
+import 'package:kenoverse/widgets/home_widgets.dart';
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
@@ -20,6 +24,7 @@ class HomeScreen extends StatefulWidget {
 }
 
 class _HomeScreenState extends State<HomeScreen> {
+  /// Generates a time-based greeting for the user.
   String _getGreeting() {
     var hour = DateTime.now().hour;
     if (hour < 4) return 'It is time for thy sleep,';
@@ -28,59 +33,60 @@ class _HomeScreenState extends State<HomeScreen> {
     return 'Good Evening,';
   }
 
+  /// Helper to build the profile avatar/login icon.
+  Widget _buildProfileAvatar(BuildContext context) {
+    return GestureDetector(
+      onTap: () {
+        showDialog(
+          context: context,
+          builder: (context) => const SettingsDialog(),
+        );
+      },
+      child: CircleAvatar(
+        radius: AppConstants.radiusXL,
+        backgroundColor: context.colorScheme.primaryContainer,
+        child: Icon(
+          FirebaseAuth.instance.currentUser == null ? Icons.login : Icons.person_outline,
+          color: context.colorScheme.onPrimaryContainer,
+        ),
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
+    final user = FirebaseAuth.instance.currentUser;
+
     return Scaffold(
       body: SafeArea(
         child: SingleChildScrollView(
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              // 1. Welcome Header
-              Padding(
-                padding: const EdgeInsets.fromLTRB(20, 20, 20, 10),
-                child: Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: [
-                    Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(
-                          _getGreeting(),
-                          style: context.textTheme.bodyLarge?.copyWith(
-                                color: context.colorScheme.secondary,
-                              ),
-                        ),
-                        Text(
-                          'Keno',
-                          style: context.textTheme.headlineMedium?.copyWith(
-                                fontWeight: FontWeight.bold,
-                                color: context.colorScheme.onSurface,
-                              ),
-                        ),
-                      ],
-                    ),
-                    GestureDetector(
-                      onTap: () {
-                        showDialog(
-                          context: context,
-                          builder: (context) => const SettingsDialog(),
-                        );
-                      },
-                      child: CircleAvatar(
-                        radius: 24,
-                        backgroundColor: context.colorScheme.primaryContainer,
-                        child: Icon(
-                          FirebaseAuth.instance.currentUser == null ? Icons.login : Icons.person_outline,
-                          color: context.colorScheme.onPrimaryContainer,
-                        ),
-                      ),
-                    ),
-                  ],
+              // --- 1. Welcome Header Section ---
+              if (user != null)
+                StreamBuilder<DocumentSnapshot>(
+                  stream: FirestoreService().getUserStream(user.uid),
+                  builder: (context, snapshot) {
+                    String name = 'Keno';
+                    if (snapshot.hasData && snapshot.data!.exists) {
+                      name = (snapshot.data!.data() as Map<String, dynamic>)['username'] ?? 'Keno';
+                    }
+                    return HomeWelcomeHeader(
+                      greeting: _getGreeting(),
+                      name: name,
+                      profileAvatar: _buildProfileAvatar(context),
+                    );
+                  },
+                )
+              else
+                HomeWelcomeHeader(
+                  greeting: _getGreeting(),
+                  name: 'Keno',
+                  profileAvatar: _buildProfileAvatar(context),
                 ),
-              ),
 
-              // 2. Featured/Hero News Section (Carousel)
+              // --- 2. News Carousel Section ---
               StreamBuilder<QuerySnapshot>(
                 stream: FirestoreService().newsStream,
                 builder: (context, snapshot) {
@@ -92,27 +98,14 @@ class _HomeScreenState extends State<HomeScreen> {
                   }
 
                   var articles = snapshot.data!.docs.map((doc) => NewsArticle.fromFirestore(doc)).toList();
-
-                  return SizedBox(
-                    height: 220,
-                    child: PageView.builder(
-                      controller: PageController(viewportFraction: 0.98),
-                      itemCount: articles.length,
-                      itemBuilder: (context, index) {
-                        return Padding(
-                          padding: const EdgeInsets.symmetric(horizontal: 0.0, vertical: 0.0),
-                          child: News().newNews(context, articles[index]),
-                        );
-                      },
-                    ),
-                  );
+                  return NewsCarousel(articles: articles);
                 },
               ),
 
-              // 3. Albums Section
+              // --- 3. Main Content Container ---
               Container(
                 width: double.infinity,
-                padding: const EdgeInsets.symmetric(vertical: 20),
+                padding: context.paddingVertical(AppConstants.spacingLG),
                 decoration: BoxDecoration(
                   color: context.colorScheme.surfaceContainer,
                   borderRadius: const BorderRadius.vertical(top: Radius.circular(30)),
@@ -120,59 +113,31 @@ class _HomeScreenState extends State<HomeScreen> {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Padding(
-                      padding: const EdgeInsets.symmetric(horizontal: 25.0),
-                      child: GestureDetector(
-                        onTap: () {
-                          Navigator.push(
-                            context,
-                            MaterialPageRoute(builder: (context) => const AllAlbumsScreen()),
-                          );
-                        },
-                        child: Row(
-                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                          children: [
-                            Text(
-                              'Albums',
-                              style: context.textTheme.titleLarge?.copyWith(
-                                    fontWeight: FontWeight.bold,
-                                  ),
-                            ),
-                            Icon(
-                              Icons.arrow_forward,
-                              size: 20,
-                              color: context.colorScheme.secondary,
-                            ),
-                          ],
-                        ),
-                      ),
+                    // --- 3a. Albums Row ---
+                    _buildSectionTitle(
+                      context, 
+                      'Albums', 
+                      onTap: () => Navigator.push(context, MaterialPageRoute(builder: (context) => const AllAlbumsScreen())),
                     ),
                     context.gapMD,
                     SizedBox(
                       height: 140,
-                      child: StreamBuilder<QuerySnapshot>(
-                        stream: FirestoreService().songs,
+                      child: StreamBuilder<List<Song>>(
+                        stream: context.read<SyncService>().getLocalSongsStream(),
                         builder: (context, snapshot) {
-                          if (snapshot.connectionState == ConnectionState.waiting) {
+                          if (snapshot.connectionState == ConnectionState.waiting && !snapshot.hasData) {
                             return const Center(child: CircularProgressIndicator());
                           }
-                          if (!snapshot.hasData || snapshot.data!.docs.isEmpty) {
-                            return Center(
-                              child: Text(
-                                'No songs found',
-                                style: TextStyle(color: context.colorScheme.secondary),
-                              ),
-                            );
+                          if (!snapshot.hasData || snapshot.data!.isEmpty) {
+                            return Center(child: Text('No songs found', style: TextStyle(color: context.colorScheme.secondary)));
                           }
-                          var docs = snapshot.data!.docs;
+                          var songs = snapshot.data!;
                           return ListView.builder(
                             scrollDirection: Axis.horizontal,
-                            padding: const EdgeInsets.symmetric(horizontal: 20),
-                            itemCount: docs.length,
+                            padding: context.paddingHorizontal(AppConstants.spacingLG),
+                            itemCount: songs.length,
                             itemBuilder: (context, index) {
-                              var data = docs[index].data() as Map<String, dynamic>;
-                              Song song = Song.fromFirestore(data, docs[index].id);
-                              return Albums().newAlbum(context, song);
+                              return AlbumCard(song: songs[index]);
                             },
                           );
                         },
@@ -181,78 +146,47 @@ class _HomeScreenState extends State<HomeScreen> {
                     
                     context.gapLG,
                     
-                    // 4. Recently Accessed Section
+                    // --- 3b. Recently Accessed Section ---
                     Padding(
-                      padding: const EdgeInsets.symmetric(horizontal: 25.0),
+                      padding: context.paddingHorizontal(AppConstants.spacingLG),
                       child: Text(
                         'Recently Accessed',
-                        style: context.textTheme.titleLarge?.copyWith(
-                          fontWeight: FontWeight.bold,
-                        ),
-                      ),
-                    ),
-                    context.gapSM,
-                    SizedBox(
-                      height: 120,
-                      child: StreamBuilder<QuerySnapshot>(
-                        stream: FirestoreService().getHistoryStream(FirebaseAuth.instance.currentUser?.uid ?? ''),
-                        builder: (context, snapshot) {
-                          if (!snapshot.hasData || snapshot.data!.docs.isEmpty) {
-                            return const SizedBox();
-                          }
-                          var historyDocs = snapshot.data!.docs;
-                          
-                          return ListView.builder(
-                            scrollDirection: Axis.horizontal,
-                            padding: const EdgeInsets.symmetric(horizontal: 20),
-                            itemCount: historyDocs.length,
-                            itemBuilder: (context, index) {
-                              String songId = historyDocs[index]['songId'];
-                              return FutureBuilder<DocumentSnapshot>(
-                                future: FirestoreService().songsCollection.doc(songId).get(),
-                                builder: (context, songSnapshot) {
-                                  if (!songSnapshot.hasData || !songSnapshot.data!.exists) {
-                                    return const SizedBox();
-                                  }
-                                  var data = songSnapshot.data!.data() as Map<String, dynamic>;
-                                  Song song = Song.fromFirestore(data, songSnapshot.data!.id);
-                                  return _buildRecentlyAccessedAlbum(context, song);
-                                },
-                              );
-                            },
-                          );
-                        },
-                      ),
-                    ),
-                    
-                    context.gapLG,
-                    
-                    // 5. Recent Releases List
-                    Padding(
-                      padding: const EdgeInsets.symmetric(horizontal: 25.0),
-                      child: Text(
-                        'Recent Releases',
-                        style: context.textTheme.titleLarge?.copyWith(
-                              fontWeight: FontWeight.bold,
-                            ),
+                        style: context.textTheme.titleLarge?.copyWith(fontWeight: FontWeight.bold),
                       ),
                     ),
                     context.gapSM,
                     StreamBuilder<QuerySnapshot>(
-                      stream: FirestoreService().recentSongs,
+                      stream: FirestoreService().getHistoryStream(FirebaseAuth.instance.currentUser?.uid ?? ''),
                       builder: (context, snapshot) {
-                        if (snapshot.connectionState == ConnectionState.waiting) {
-                          return const SizedBox();
-                        }
                         if (!snapshot.hasData || snapshot.data!.docs.isEmpty) {
                           return const SizedBox();
                         }
-                        var docs = snapshot.data!.docs;
+                        return RecentlyAccessedList(historyDocs: snapshot.data!.docs);
+                      },
+                    ),
+                    
+                    context.gapLG,
+                    
+                    // --- 3c. Recent Releases Section ---
+                    Padding(
+                      padding: context.paddingHorizontal(AppConstants.spacingLG),
+                      child: Text(
+                        'Recent Releases',
+                        style: context.textTheme.titleLarge?.copyWith(fontWeight: FontWeight.bold),
+                      ),
+                    ),
+                    context.gapSM,
+                    StreamBuilder<List<Song>>(
+                      stream: context.read<SyncService>().getLocalSongsStream(),
+                      builder: (context, snapshot) {
+                        if (!snapshot.hasData || snapshot.data!.isEmpty) return const SizedBox();
+                        
+                        // Sort by timestamp/id for "recent" simulation locally, 
+                        // or just show the last 10 added to the cache.
+                        var songs = snapshot.data!.take(10).toList();
                         return Column(
-                          children: docs.map((doc) {
-                            var data = doc.data() as Map<String, dynamic>;
-                            Song song = Song.fromFirestore(data, doc.id);
-                            return _buildRecentSongTile(context, song);
+                          children: songs.map((song) {
+                            return RecentReleaseTile(song: song);
                           }).toList(),
                         );
                       },
@@ -264,105 +198,25 @@ class _HomeScreenState extends State<HomeScreen> {
           ),
         ),
       ),
-      bottomNavigationBar: BottomBar.bottomAppBar(context),
     );
   }
 
-  Widget _buildRecentlyAccessedAlbum(BuildContext context, Song song) {
-    return GestureDetector(
-      onTap: () {
-        Navigator.push(
-          context,
-          MaterialPageRoute(
-            builder: (context) => LyricScreen(song: song),
-          ),
-        );
-      },
-      child: Container(
-        width: 90,
-        margin: const EdgeInsets.symmetric(horizontal: 5),
-        child: Column(
-          children: [
-            ClipRRect(
-              borderRadius: context.radiusMD,
-              child: Image(
-                image: song.thumbnail()!.image,
-                height: 80,
-                width: 80,
-                fit: BoxFit.cover,
-              ),
-            ),
-            context.gapXS,
-            Text(
-              song.title(),
-              maxLines: 1,
-              overflow: TextOverflow.ellipsis,
-              style: context.textTheme.bodySmall?.copyWith(fontWeight: FontWeight.bold),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-
-  Widget _buildRecentSongTile(BuildContext context, Song song) {
+  /// Helper to build section titles with an optional "View All" arrow.
+  Widget _buildSectionTitle(BuildContext context, String title, {VoidCallback? onTap}) {
     return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 8),
-      child: InkWell(
-        onTap: () {
-          Navigator.push(
-            context,
-            MaterialPageRoute(
-              builder: (context) => LyricScreen(song: song),
+      padding: context.paddingHorizontal(AppConstants.spacingLG),
+      child: GestureDetector(
+        onTap: onTap,
+        child: Row(
+          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          children: [
+            Text(
+              title,
+              style: context.textTheme.titleLarge?.copyWith(fontWeight: FontWeight.bold),
             ),
-          );
-        },
-        borderRadius: context.radiusLG,
-        child: Container(
-          padding: context.paddingMD,
-          decoration: BoxDecoration(
-            color: context.colorScheme.surface,
-            borderRadius: context.radiusLG,
-            border: Border.all(color: context.colorScheme.outlineVariant.withValues(alpha: 0.5)),
-          ),
-          child: Row(
-            children: [
-              ClipRRect(
-                borderRadius: context.radiusMD,
-                child: Image(
-                  image: song.thumbnail()!.image,
-                  height: 56,
-                  width: 56,
-                  fit: BoxFit.cover,
-                ),
-              ),
-              context.gapMD,
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      song.title(),
-                      style: context.textTheme.titleMedium?.copyWith(
-                            fontWeight: FontWeight.bold,
-                          ),
-                    ),
-                    Text(
-                      song.songAlbums.isNotEmpty ? song.songAlbums.join(', ') : 'Single',
-                      style: context.textTheme.bodySmall?.copyWith(
-                            color: context.colorScheme.secondary,
-                          ),
-                    ),
-                  ],
-                ),
-              ),
-              IconButton(
-                icon: const Icon(Icons.more_vert),
-                color: context.colorScheme.onSurfaceVariant,
-                onPressed: () => SongActions.showSongMenu(context, song),
-              ),
-            ],
-          ),
+            if (onTap != null)
+              Icon(Icons.arrow_forward, size: 20, color: context.colorScheme.secondary),
+          ],
         ),
       ),
     );

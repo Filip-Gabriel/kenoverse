@@ -1,3 +1,5 @@
+// Allows users to contribute alternative audio versions or translations for a song.
+// Provides a segmented interface for switching between audio and lyric contributions.
 import 'package:flutter/material.dart';
 import 'package:kenoverse/functionality/lyrics.dart';
 import 'package:kenoverse/functionality/firestore_service.dart';

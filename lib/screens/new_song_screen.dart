@@ -1,9 +1,12 @@
+// A form for contributing new songs or editing existing ones.
+// Collects extensive metadata, credits, lyrics, and streaming links for Firestore storage.
 import 'package:flutter/material.dart';
 import 'package:kenoverse/functionality/lyrics.dart';
 import 'package:intl/intl.dart';
 import 'package:kenoverse/functionality/firestore_service.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:kenoverse/functionality/theme/theme_extensions.dart';
+import 'package:kenoverse/widgets/form_widgets.dart';
 
 class NewSong extends StatefulWidget {
   final Song? existingSong;
@@ -169,49 +172,6 @@ class _NewSongState extends State<NewSong> {
     Navigator.pop(context);
   }
 
-  Widget _buildSectionHeader(String title, IconData icon) {
-    return Padding(
-      padding: const EdgeInsets.only(top: 24, bottom: 12),
-      child: Row(
-        children: [
-          Icon(icon, size: 18, color: context.colorScheme.primary),
-          context.gapSM,
-          Text(
-            title.toUpperCase(),
-            style: context.textTheme.labelLarge?.copyWith(
-              color: context.colorScheme.primary,
-              fontWeight: FontWeight.bold,
-              letterSpacing: 1.2,
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
-  InputDecoration _inputDecoration(String label, {IconData? prefixIcon, String? hint}) {
-    return InputDecoration(
-      labelText: label,
-      hintText: hint,
-      prefixIcon: prefixIcon != null ? Icon(prefixIcon) : null,
-      filled: true,
-      fillColor: context.colorScheme.surfaceContainerHighest.withValues(alpha: 0.3),
-      border: OutlineInputBorder(
-        borderRadius: context.radiusMD,
-        borderSide: BorderSide.none,
-      ),
-      enabledBorder: OutlineInputBorder(
-        borderRadius: context.radiusMD,
-        borderSide: BorderSide.none,
-      ),
-      focusedBorder: OutlineInputBorder(
-        borderRadius: context.radiusMD,
-        borderSide: BorderSide(color: context.colorScheme.primary, width: 2),
-      ),
-      contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
-    );
-  }
-
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -236,7 +196,7 @@ class _NewSongState extends State<NewSong> {
                       borderRadius: context.radiusXL,
                       boxShadow: [
                         BoxShadow(
-                          color: Colors.black.withValues(alpha: 0.1),
+                          color: context.colorScheme.shadow.withValues(alpha: 0.1),
                           blurRadius: 10,
                           offset: const Offset(0, 4),
                         ),
@@ -265,83 +225,55 @@ class _NewSongState extends State<NewSong> {
                           ),
                   ),
                   context.gapMD,
-                  TextField(
+                  KenoTextField(
                     controller: _thumbnailController,
+                    label: 'Artwork URL',
+                    prefixIcon: Icons.link,
                     onChanged: (value) => setState(() {}),
-                    decoration: _inputDecoration('Artwork URL', prefixIcon: Icons.link),
                   ),
                 ],
               ),
             ),
 
-            _buildSectionHeader('Basic Info', Icons.info_outline),
-            TextField(
-              controller: _titleController,
-              decoration: _inputDecoration('Song Title'),
-            ),
+            const FormSectionHeader(title: 'Basic Info', icon: Icons.info_outline),
+            KenoTextField(controller: _titleController, label: 'Song Title'),
             context.gapMD,
-            TextField(
-              controller: _lyricsController,
-              maxLines: 8,
-              decoration: _inputDecoration('Lyrics'),
-            ),
+            KenoTextField(controller: _lyricsController, label: 'Lyrics', maxLines: 8),
 
-            _buildSectionHeader('Artists & Credits', Icons.people_outline),
-            TextField(
-              controller: _originalArtistController,
-              decoration: _inputDecoration('Original Artist(s)', hint: 'Separate with commas'),
-            ),
+            const FormSectionHeader(title: 'Artists & Credits', icon: Icons.people_outline),
+            KenoTextField(controller: _originalArtistController, label: 'Original Artist(s)', hint: 'Separate with commas'),
             context.gapMD,
-            TextField(
-              controller: _vocalsController,
-              decoration: _inputDecoration('Vocal(s)', hint: 'Separate with commas'),
-            ),
+            KenoTextField(controller: _vocalsController, label: 'Vocal(s)', hint: 'Separate with commas'),
             context.gapMD,
-            TextField(
-              controller: _featuredArtistController,
-              decoration: _inputDecoration('Featured Artist(s)', hint: 'Separate with commas'),
-            ),
+            KenoTextField(controller: _featuredArtistController, label: 'Featured Artist(s)', hint: 'Separate with commas'),
             context.gapMD,
-            TextField(
-              controller: _audioController,
-              decoration: _inputDecoration('Audio/Mixing', hint: 'Separate with commas'),
-            ),
+            KenoTextField(controller: _audioController, label: 'Audio/Mixing', hint: 'Separate with commas'),
             context.gapMD,
-            TextField(
-              controller: _arrangementController,
-              decoration: _inputDecoration('Arrangement', hint: 'Separate with commas'),
-            ),
+            KenoTextField(controller: _arrangementController, label: 'Arrangement', hint: 'Separate with commas'),
             context.gapMD,
-            TextField(
-              controller: _artworkController,
-              decoration: _inputDecoration('Artwork By', hint: 'Separate with commas'),
-            ),
+            KenoTextField(controller: _artworkController, label: 'Artwork By', hint: 'Separate with commas'),
             context.gapMD,
-            TextField(
-              controller: _videoController,
-              decoration: _inputDecoration('Video By', hint: 'Separate with commas'),
-            ),
+            KenoTextField(controller: _videoController, label: 'Video By', hint: 'Separate with commas'),
 
-            _buildSectionHeader('Metadata', Icons.settings_outlined),
-            TextField(
-              controller: _albumController,
-              decoration: _inputDecoration('Album(s)', prefixIcon: Icons.album, hint: 'Separate with commas'),
-            ),
+            const FormSectionHeader(title: 'Metadata', icon: Icons.settings_outlined),
+            KenoTextField(controller: _albumController, label: 'Album(s)', prefixIcon: Icons.album, hint: 'Separate with commas'),
             context.gapMD,
             Row(
               children: [
                 Expanded(
-                  child: TextField(
-                    controller: _languageController,
-                    decoration: _inputDecoration('Language'),
-                  ),
+                  child: KenoTextField(controller: _languageController, label: 'Language'),
                 ),
                 context.gapMD,
                 Expanded(
                   child: InkWell(
                     onTap: () => _selectDate(context),
                     child: InputDecorator(
-                      decoration: _inputDecoration('Release Date'),
+                      decoration: InputDecoration(
+                        labelText: 'Release Date',
+                        filled: true,
+                        fillColor: context.colorScheme.surfaceContainerHighest.withValues(alpha: 0.3),
+                        border: OutlineInputBorder(borderRadius: context.radiusMD, borderSide: BorderSide.none),
+                      ),
                       child: Text(
                         _selectedDate == null ? 'Select Date' : DateFormat('MMM d, yyyy').format(_selectedDate!),
                         style: TextStyle(fontSize: 14, color: _selectedDate == null ? Theme.of(context).hintColor : null),
@@ -352,48 +284,43 @@ class _NewSongState extends State<NewSong> {
               ],
             ),
 
-            _buildSectionHeader('Streaming Links', Icons.link),
-            TextField(
-              controller: _youtubeController,
-              decoration: _inputDecoration('YouTube URL', prefixIcon: Icons.play_circle_fill),
-            ),
+            const FormSectionHeader(title: 'Streaming Links', icon: Icons.link),
+            KenoTextField(controller: _youtubeController, label: 'YouTube URL', prefixIcon: Icons.play_circle_fill),
             context.gapMD,
-            TextField(
-              controller: _spotifyController,
-              decoration: _inputDecoration('Spotify URL', prefixIcon: Icons.library_music),
+            KenoTextField(controller: _spotifyController, label: 'Spotify URL', prefixIcon: Icons.library_music),
+
+            context.gapXL,
+            const Divider(),
+            context.gapXL,
+
+            Row(
+              children: [
+                if (widget.existingSong == null)
+                  Expanded(
+                    child: OutlinedButton(
+                      onPressed: () => _processSong(asDraft: true),
+                      style: OutlinedButton.styleFrom(
+                        padding: const EdgeInsets.symmetric(vertical: 16),
+                        shape: RoundedRectangleBorder(borderRadius: context.radiusMD),
+                      ),
+                      child: const Text('Save Draft'),
+                    ),
+                  ),
+                if (widget.existingSong == null) context.gapMD,
+                Expanded(
+                  child: FilledButton(
+                    onPressed: () => _processSong(asDraft: false),
+                    style: FilledButton.styleFrom(
+                      padding: const EdgeInsets.symmetric(vertical: 16),
+                      shape: RoundedRectangleBorder(borderRadius: context.radiusMD),
+                    ),
+                    child: Text(widget.existingSong != null ? 'Update Song' : 'Post Song'),
+                  ),
+                ),
+              ],
             ),
 
             context.gapXXL,
-          ],
-        ),
-      ),
-      bottomNavigationBar: BottomAppBar(
-        height: 80,
-        padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
-        child: Row(
-          children: [
-            if (widget.existingSong == null)
-              Expanded(
-                child: OutlinedButton(
-                  onPressed: () => _processSong(asDraft: true),
-                  style: OutlinedButton.styleFrom(
-                    padding: const EdgeInsets.symmetric(vertical: 16),
-                    shape: RoundedRectangleBorder(borderRadius: context.radiusMD),
-                  ),
-                  child: const Text('Save Draft'),
-                ),
-              ),
-            if (widget.existingSong == null) context.gapMD,
-            Expanded(
-              child: FilledButton(
-                onPressed: () => _processSong(asDraft: false),
-                style: FilledButton.styleFrom(
-                  padding: const EdgeInsets.symmetric(vertical: 16),
-                  shape: RoundedRectangleBorder(borderRadius: context.radiusMD),
-                ),
-                child: Text(widget.existingSong != null ? 'Update Song' : 'Post Song'),
-              ),
-            ),
           ],
         ),
       ),

@@ -1,3 +1,5 @@
+// Displays a list of songs matching a specific search query.
+// Provides a clean interface for navigating to song details from search results.
 import 'package:flutter/material.dart';
 import 'package:kenoverse/functionality/lyrics.dart';
 import 'package:kenoverse/functionality/firestore_service.dart';

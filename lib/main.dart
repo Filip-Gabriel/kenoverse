@@ -6,15 +6,23 @@ import 'firebase_options.dart';
 import 'package:kenoverse/functionality/auth_check.dart';
 import 'package:provider/provider.dart';
 import 'package:kenoverse/functionality/theme/theme_notifier.dart';
+import 'package:kenoverse/functionality/sync_service.dart';
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
   await Firebase.initializeApp(
     options: DefaultFirebaseOptions.currentPlatform,
   );
+  
+  final syncService = SyncService();
+  await syncService.init();
+
   runApp(
-    ChangeNotifierProvider(
-      create: (_) => ThemeNotifier(),
+    MultiProvider(
+      providers: [
+        ChangeNotifierProvider(create: (_) => ThemeNotifier()),
+        Provider.value(value: syncService),
+      ],
       child: const Kenoverse(),
     ),
   );
@@ -30,9 +38,8 @@ class Kenoverse extends StatelessWidget {
       theme: CustomTheme.lightTheme(),
       darkTheme: CustomTheme.darkTheme(),
       themeMode: Provider.of<ThemeNotifier>(context).themeMode,
-      home: AuthCheck(),
+      home: const AuthCheck(),
     );
   }
 }
 // todo make it so that the app will download song and update its internal database from firebase when it connects to the internet
-// todo instad of the greeting always being "keno" make it so that it says the users username

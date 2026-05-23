@@ -1,3 +1,5 @@
+// Data model representing an artist or creator profile.
+// Stores biography, social media links, and ownership information.
 import 'package:cloud_firestore/cloud_firestore.dart';
 
 class Artist {

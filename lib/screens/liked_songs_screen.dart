@@ -1,3 +1,5 @@
+// Displays a list of all songs the user has 'liked'.
+// Synchronizes with the user's personal collection in Firestore.
 import 'package:flutter/material.dart';
 import 'package:kenoverse/functionality/lyrics.dart';
 import 'package:kenoverse/functionality/firestore_service.dart';

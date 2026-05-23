@@ -1,3 +1,5 @@
+// A dialog for managing user preferences and account settings.
+// Allows users to update their username, toggle theme modes, and sign out.
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:kenoverse/functionality/auth_service.dart';
@@ -7,6 +9,7 @@ import 'package:provider/provider.dart';
 import 'package:kenoverse/functionality/theme/theme_notifier.dart';
 import 'package:kenoverse/functionality/firestore_service.dart';
 import 'package:kenoverse/functionality/theme/app_constants.dart';
+import 'package:kenoverse/screens/liked_songs_screen.dart';
 
 class SettingsDialog extends StatefulWidget {
   const SettingsDialog({super.key});
@@ -107,7 +110,7 @@ class _SettingsDialogState extends State<SettingsDialog> {
                               if (_usernameController.text.isNotEmpty) {
                                 await _firestoreService.updateUsername(user!.uid, _usernameController.text);
                                 _loadUserData(); // Reload to get the number
-                                if (mounted) {
+                                if (context.mounted) {
                                   ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Username set!')));
                                 }
                               }
@@ -138,45 +141,40 @@ class _SettingsDialogState extends State<SettingsDialog> {
                   _buildSectionHeader('Appearance'),
                   Consumer<ThemeNotifier>(
                     builder: (context, themeNotifier, child) {
-                      return Column(
-                        children: [
-                          RadioListTile<ThemeMode>(
-                            title: const Text('Follow System'),
-                            value: ThemeMode.system,
-                            groupValue: themeNotifier.themeMode,
-                            onChanged: (mode) => themeNotifier.setThemeMode(mode!),
-                          ),
-                          RadioListTile<ThemeMode>(
-                            title: const Text('Light Mode'),
-                            value: ThemeMode.light,
-                            groupValue: themeNotifier.themeMode,
-                            onChanged: (mode) => themeNotifier.setThemeMode(mode!),
-                          ),
-                          RadioListTile<ThemeMode>(
-                            title: const Text('Dark Mode'),
-                            value: ThemeMode.dark,
-                            groupValue: themeNotifier.themeMode,
-                            onChanged: (mode) => themeNotifier.setThemeMode(mode!),
-                          ),
-                        ],
+                      return RadioGroup<ThemeMode>(
+                        groupValue: themeNotifier.themeMode,
+                        onChanged: (mode) => themeNotifier.setThemeMode(mode!),
+                        child: const Column(
+                          children: [
+                            RadioListTile<ThemeMode>(
+                              title: Text('Follow System'),
+                              value: ThemeMode.system,
+                            ),
+                            RadioListTile<ThemeMode>(
+                              title: Text('Light Mode'),
+                              value: ThemeMode.light,
+                            ),
+                            RadioListTile<ThemeMode>(
+                              title: Text('Dark Mode'),
+                              value: ThemeMode.dark,
+                            ),
+                          ],
+                        ),
                       );
                     },
                   ),
                   const Divider(indent: 20, endIndent: 20),
                   _buildSectionHeader('Library'),
                   ListTile(
-                    leading: const Icon(Icons.history),
-                    title: const Text('Clear History'),
-                    onTap: () {
-                      ScaffoldMessenger.of(context).showSnackBar(
-                        const SnackBar(content: Text('History clearing coming soon!')),
-                      );
-                    },
-                  ),
-                  ListTile(
                     leading: const Icon(Icons.favorite_border),
                     title: const Text('Liked Songs'),
-                    onTap: () {},
+                    onTap: () {
+                      Navigator.pop(context); // Close dialog
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(builder: (context) => const LikedSongsScreen()),
+                      );
+                    },
                   ),
                   const Divider(indent: 20, endIndent: 20),
                   _buildSectionHeader('Support & About'),
@@ -202,7 +200,7 @@ class _SettingsDialogState extends State<SettingsDialog> {
                       child: OutlinedButton.icon(
                         onPressed: () async {
                           await _auth.signOut();
-                          if (mounted) Navigator.pop(context);
+                          if (context.mounted) Navigator.pop(context);
                         },
                         icon: const Icon(Icons.logout, color: Colors.red),
                         label: const Text('Sign Out', style: TextStyle(color: Colors.red)),

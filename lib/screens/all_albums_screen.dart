@@ -1,8 +1,10 @@
+// Displays a complete grid of all available albums/songs in the library.
+// Uses a responsive grid layout with a pinned search bar/header.
 import 'package:flutter/material.dart';
-import 'package:kenoverse/functionality/firestore_service.dart';
 import 'package:kenoverse/functionality/theme/theme_extensions.dart';
-import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:kenoverse/functionality/lyrics.dart';
+import 'package:provider/provider.dart';
+import 'package:kenoverse/functionality/sync_service.dart';
 import 'package:kenoverse/screens/lyric_screen.dart';
 
 class AllAlbumsScreen extends StatelessWidget {
@@ -12,13 +14,13 @@ class AllAlbumsScreen extends StatelessWidget {
   Widget build(BuildContext context) {
     return Scaffold(
       body: SafeArea(
-        child: StreamBuilder<QuerySnapshot>(
-          stream: FirestoreService().songs,
+        child: StreamBuilder<List<Song>>(
+          stream: context.read<SyncService>().getLocalSongsStream(),
           builder: (context, snapshot) {
-            if (snapshot.connectionState == ConnectionState.waiting) {
+            if (snapshot.connectionState == ConnectionState.waiting && !snapshot.hasData) {
               return const Center(child: CircularProgressIndicator());
             }
-            if (!snapshot.hasData || snapshot.data!.docs.isEmpty) {
+            if (!snapshot.hasData || snapshot.data!.isEmpty) {
               return Center(
                 child: Text(
                   'No albums found',
@@ -26,8 +28,7 @@ class AllAlbumsScreen extends StatelessWidget {
                 ),
               );
             }
-            var docs = snapshot.data!.docs;
-            var songs = docs.map((doc) => Song.fromFirestore(doc.data() as Map<String, dynamic>, doc.id)).toList();
+            var songs = snapshot.data!;
 
             return CustomScrollView(
               slivers: [

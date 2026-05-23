@@ -1,6 +1,8 @@
+// A wrapper widget that listens to the Firebase auth state.
+// It directs users to either the MainScreen (if logged in) or the LoginScreen.
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
-import 'package:kenoverse/screens/home_screen.dart';
+import 'package:kenoverse/screens/main_screen.dart';
 import 'package:kenoverse/screens/login_screen.dart';
 
 class AuthCheck extends StatelessWidget {
@@ -17,7 +19,7 @@ class AuthCheck extends StatelessWidget {
           );
         }
         if (snapshot.hasData) {
-          return HomeScreen();
+          return const MainScreen();
         }
         return const LoginScreen();
       },

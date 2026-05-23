@@ -1,3 +1,5 @@
+// Displays the full content of a news article.
+// Features a large header image and formatted text for the article body.
 import 'package:flutter/material.dart';
 import 'package:kenoverse/functionality/news_model.dart';
 import 'package:kenoverse/functionality/theme/theme_extensions.dart';

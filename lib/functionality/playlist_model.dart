@@ -1,3 +1,5 @@
+// Data model representing a user-created song playlist.
+// Manages playlist metadata and the list of associated song IDs.
 import 'package:cloud_firestore/cloud_firestore.dart';
 
 class Playlist {
