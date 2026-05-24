@@ -29,8 +29,21 @@ class _MainScreenState extends State<MainScreen> {
   ];
 
   bool _shouldShowPCUI(BuildContext context) {
+    // If the screen is narrow (mobile or small window), always show mobile UI
+    if (MediaQuery.of(context).size.width <= AppConstants.breakpointMobile) {
+      return false;
+    }
+    
+    // On Web or Desktop platforms, if screen is wide enough, show PC UI
     if (kIsWeb) return true;
-    if (Platform.isWindows || Platform.isMacOS || Platform.isLinux) return true;
+    
+    try {
+      if (Platform.isWindows || Platform.isMacOS || Platform.isLinux) return true;
+    } catch (_) {
+      // If Platform check fails (some web edge cases), fallback to width only
+    }
+
+    // Default for tablets/large screens on mobile OS
     return MediaQuery.of(context).size.width > AppConstants.breakpointMobile;
   }
 

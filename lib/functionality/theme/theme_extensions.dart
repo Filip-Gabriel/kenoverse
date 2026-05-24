@@ -1,3 +1,4 @@
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:kenoverse/functionality/theme/app_constants.dart';
 
@@ -138,6 +139,12 @@ extension ResponsiveExtensions on BuildContext {
 
   /// Check if current device is desktop size (>= 1200px width)
   bool get isDesktop => AppConstants.isDesktop(mediaQuery.size.width);
+
+  /// Check if the app is running on a mobile browser (Chrome/Safari on iOS/Android)
+  bool get isMobileBrowser => kIsWeb && (defaultTargetPlatform == TargetPlatform.iOS || defaultTargetPlatform == TargetPlatform.android);
+
+  /// Check if the app is running on a desktop browser
+  bool get isDesktopBrowser => kIsWeb && (defaultTargetPlatform == TargetPlatform.windows || defaultTargetPlatform == TargetPlatform.macOS || defaultTargetPlatform == TargetPlatform.linux);
 
   /// Get responsive text size multiplier
   double get textSizeMultiplier => AppConstants.getTextSizeMultiplier(mediaQuery.size.width);
