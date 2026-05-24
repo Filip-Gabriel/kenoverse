@@ -15,7 +15,7 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'dart:async';
 import 'dart:io';
 import 'package:flutter/foundation.dart';
-import 'package:youtube_player_flutter/youtube_player_flutter.dart';
+import 'package:flutter_inappwebview/flutter_inappwebview.dart';
 import 'package:just_audio/just_audio.dart';
 import 'package:kenoverse/widgets/lyric_widgets.dart';
 import 'package:connectivity_plus/connectivity_plus.dart';
@@ -52,8 +52,9 @@ class _LyricScreenState extends State<LyricScreen> {
   int _currentLineIndex = -1;
 
   // YouTube Player State
-  YoutubePlayerController? _youtubeController;
+  InAppWebViewController? _webViewController;
   bool _isSyncedWithYoutube = false;
+  bool _isYoutubePlaying = false;
 
   // Audio Player State
   final AudioPlayer _audioPlayer = AudioPlayer();
@@ -61,7 +62,7 @@ class _LyricScreenState extends State<LyricScreen> {
 
   bool get _isPlaying {
     if (_isSyncedWithYoutube) {
-      return _youtubeController?.value.isPlaying ?? false;
+      return _isYoutubePlaying;
     } else {
       return _audioPlayer.playing;
     }
@@ -99,8 +100,7 @@ class _LyricScreenState extends State<LyricScreen> {
     _timer?.cancel();
     _connectivitySubscription?.cancel();
     _scrollController.dispose();
-    _youtubeController?.removeListener(_youtubeListener);
-    _youtubeController?.dispose();
+    _webViewController = null;
     _audioPlayer.dispose();
     super.dispose();
   }
@@ -121,27 +121,29 @@ class _LyricScreenState extends State<LyricScreen> {
   }
 
   void _initYoutubeController() {
-    if (activeYoutubeUrl != null) {
-      final videoId = YoutubePlayer.convertUrlToId(activeYoutubeUrl!);
-      if (videoId != null) {
-        _youtubeController = YoutubePlayerController(
-          initialVideoId: videoId,
-          flags: const YoutubePlayerFlags(
-            autoPlay: false,
-            mute: false,
-          ),
-        )..addListener(_youtubeListener);
+    // Initialized via InAppWebView onWebViewCreated
+  }
+
+  void _onYoutubeMessage(Map<String, dynamic> data) {
+    final String? event = data['event'];
+    final dynamic info = data['info'];
+
+    if (mounted) {
+      if (event == 'onStateChange') {
+        setState(() {
+          _isYoutubePlaying = (info == 1); // 1 = playing
+        });
+      } else if (event == 'onTimeUpdate' && info is Map && info.containsKey('currentTime')) {
+        _onYoutubeTimeUpdate(info['currentTime'].toDouble());
       }
     }
   }
 
-  void _youtubeListener() {
-    if (_isSyncedWithYoutube && _youtubeController != null) {
+  void _onYoutubeTimeUpdate(double time) {
+    if (_isSyncedWithYoutube) {
       setState(() {
-        if (_youtubeController!.value.isPlaying) {
-          _currentTime = _youtubeController!.value.position;
-          _updateCurrentLine();
-        }
+        _currentTime = Duration(milliseconds: (time * 1000).toInt());
+        _updateCurrentLine();
       });
     }
   }
@@ -150,21 +152,21 @@ class _LyricScreenState extends State<LyricScreen> {
   /// and local file playback (offline).
   void _startSyncedPlayback() async {
     if (_isOnline) {
-      if (_youtubeController == null) {
+      if (_webViewController == null) {
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(content: Text('YouTube player not ready or no video available.')),
         );
         return;
       }
       
-      if (_isSyncedWithYoutube && _youtubeController!.value.isPlaying) {
-        _youtubeController!.pause();
+      if (_isSyncedWithYoutube && _isYoutubePlaying) {
+        _webViewController?.evaluateJavascript(source: 'window.dispatchEvent(new CustomEvent("flutter_command", { detail: {"func": "pauseVideo"} }));');
       } else {
         setState(() {
           if (!_isSyncedWithYoutube) _resetPlayback(); 
           _isSyncedWithYoutube = true;
           useKaraokeDisplay = true;
-          _youtubeController!.play();
+          _webViewController?.evaluateJavascript(source: 'window.dispatchEvent(new CustomEvent("flutter_command", { detail: {"func": "playVideo"} }));');
         });
       }
     } else {
@@ -272,7 +274,7 @@ class _LyricScreenState extends State<LyricScreen> {
       _currentTime = Duration.zero;
       _currentLineIndex = -1;
       _timer?.cancel();
-      _youtubeController?.pause();
+      _webViewController?.evaluateJavascript(source: 'window.dispatchEvent(new CustomEvent("flutter_command", { detail: {"func": "pauseVideo"} }));');
     });
   }
 
@@ -405,9 +407,7 @@ class _LyricScreenState extends State<LyricScreen> {
     
     // 2. Explicitly force mobile UI if we detect a mobile browser (phone/tablet)
     if (context.isMobileBrowser) return false;
-    
-    // 3. On Web or Desktop platforms, if screen is wide enough, show PC UI
-    if (kIsWeb) return true;
+
     
     try {
       if (Platform.isWindows || Platform.isMacOS || Platform.isLinux) return true;
@@ -514,7 +514,7 @@ class _LyricScreenState extends State<LyricScreen> {
                   onPlaySynced: isKaraokeMode ? _startSyncedPlayback : null,
                   isPlaying: _isPlaying,
                 ),
-                if (_isOnline && activeYoutubeUrl != null && _youtubeController != null) ...[
+                if (_isOnline && activeYoutubeUrl != null) ...[
                   Padding(
                     padding: const EdgeInsets.all(20.0),
                     child: Column(
@@ -537,10 +537,9 @@ class _LyricScreenState extends State<LyricScreen> {
                         context.gapMD,
                         ClipRRect(
                           borderRadius: context.radiusMD,
-                          child: YoutubePlayer(
-                            controller: _youtubeController!,
-                            showVideoProgressIndicator: true,
-                            progressIndicatorColor: context.colorScheme.primary,
+                          child: SizedBox(
+                            height: 200,
+                            child: _buildInAppWebView(currentSong),
                           ),
                         ),
                         context.gapMD,
@@ -657,7 +656,7 @@ class _LyricScreenState extends State<LyricScreen> {
           Text(Song.stripTimestamps(currentLyrics), style: const TextStyle(fontSize: 16, height: 1.8)),
         
         if (_isOnline && MediaQuery.of(context).size.width <= AppConstants.breakpointMobile) ...[
-          if (activeYoutubeUrl != null && _youtubeController != null) ...[
+          if (activeYoutubeUrl != null) ...[
             context.gapXL,
             Row(
               children: [
@@ -669,7 +668,10 @@ class _LyricScreenState extends State<LyricScreen> {
             context.gapMD,
             ClipRRect(
               borderRadius: context.radiusMD,
-              child: YoutubePlayer(controller: _youtubeController!, showVideoProgressIndicator: true, progressIndicatorColor: context.colorScheme.primary),
+              child: SizedBox(
+                height: 200,
+                child: _buildInAppWebView(currentSong),
+              ),
             ),
             context.gapMD,
             _buildMVLinkTiles(context, currentSong),
@@ -708,5 +710,67 @@ class _LyricScreenState extends State<LyricScreen> {
         ],
       ],
     );
+  }
+
+  Widget _buildInAppWebView(Song currentSong) {
+    final videoId = _extractVideoId(currentSong.songYoutubeUrl);
+    if (videoId == null) return const Center(child: Text("Invalid YouTube URL", style: TextStyle(color: Colors.white)));
+
+    String relayUrl;
+    if (kIsWeb) {
+      // Use your live domain for Web (ensure you have run 'firebase deploy')
+      relayUrl = "https://kenoverse-8f206.web.app/youtube_relay.html?v=$videoId&autoplay=0";
+    } else {
+      // Use localhost server for Windows. Path must match pubspec.yaml asset path.
+      // Default documentRoot is 'assets', so the path starts after that.
+      relayUrl = "http://127.0.0.1:8080/web/youtube_relay.html?v=$videoId&autoplay=0";
+    }
+
+    return InAppWebView(
+      initialUrlRequest: URLRequest(url: WebUri(relayUrl)),
+      initialSettings: InAppWebViewSettings(
+        javaScriptEnabled: true,
+        mediaPlaybackRequiresUserGesture: false,
+        iframeReferrerPolicy: ReferrerPolicy.STRICT_ORIGIN_WHEN_CROSS_ORIGIN,
+        transparentBackground: true,
+      ),
+      onWebViewCreated: (controller) {
+        _webViewController = controller;
+        controller.addJavaScriptHandler(
+          handlerName: 'onYouTubeMessage',
+          callback: (args) {
+            debugPrint("YouTube Message: ${args[0]}");
+            _onYoutubeMessage(Map<String, dynamic>.from(args[0]));
+          },
+        );
+      },
+      onConsoleMessage: (controller, consoleMessage) {
+        debugPrint("WebView Console: ${consoleMessage.message}");
+      },
+      onLoadError: (controller, url, code, message) {
+        debugPrint("WebView Load Error: $code, $message (URL: $url)");
+      },
+      onLoadHttpError: (controller, url, statusCode, description) {
+        debugPrint("WebView HTTP Error: $statusCode, $description (URL: $url)");
+      },
+    );
+  }
+
+  String? _extractVideoId(String? url) {
+    if (url == null || url.isEmpty) return null;
+    
+    // Regular expression to handle various YouTube URL formats
+    final RegExp regExp = RegExp(
+      r"^.*((youtu.be\/)|(v\/)|(\/u\/\w\/)|(embed\/)|(watch\?))\??v?=?([^#&?]*).*",
+      caseSensitive: false,
+      multiLine: false,
+    );
+    
+    final match = regExp.firstMatch(url);
+    if (match != null && match.group(7)!.length == 11) {
+      return match.group(7);
+    }
+
+    return null;
   }
 }

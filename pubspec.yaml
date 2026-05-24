@@ -80,6 +80,7 @@ flutter:
   uses-material-design: true
   assets:
     - images/callofsilence.jpg
+    - web/youtube_relay.html
 
   # To add assets to your application, add an assets section, like this:
 

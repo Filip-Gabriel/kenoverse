@@ -174,7 +174,7 @@ class AppConstants {
   
   /// Mobile breakpoint (600px) - Phone screens
   /// Note: Breakpoints use raw logical pixels (not ScreenUtil-scaled) for correct responsive checks
-  static const double breakpointMobile = 6000.0;
+  static const double breakpointMobile = 600.0;
   
   /// Tablet breakpoint (900px) - Tablet screens
   static const double breakpointTablet = 900.0;

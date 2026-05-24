@@ -13,7 +13,7 @@ class AlbumCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     String title = song.title();
-    Image thumbnail = song.thumbnail()!;
+    Image thumbnail = song.thumbnail() ?? Song.defaultThumbnail;
     return GestureDetector(
       onTap: () {
         Navigator.push(
