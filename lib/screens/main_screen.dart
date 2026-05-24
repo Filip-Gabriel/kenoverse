@@ -5,6 +5,7 @@ import 'dart:io';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:kenoverse/functionality/theme/app_constants.dart';
+import 'package:kenoverse/functionality/theme/theme_extensions.dart';
 import 'package:kenoverse/widgets/keno_search_bar.dart';
 import 'package:kenoverse/screens/artworks_screen.dart';
 import 'package:kenoverse/screens/home_screen.dart';
@@ -29,21 +30,24 @@ class _MainScreenState extends State<MainScreen> {
   ];
 
   bool _shouldShowPCUI(BuildContext context) {
-    // If the screen is narrow (mobile or small window), always show mobile UI
+    // 1. If the screen is narrow (mobile or small window), always show mobile UI
     if (MediaQuery.of(context).size.width <= AppConstants.breakpointMobile) {
       return false;
     }
     
-    // On Web or Desktop platforms, if screen is wide enough, show PC UI
+    // 2. Explicitly force mobile UI if we detect a mobile browser (phone/tablet)
+    if (context.isMobileBrowser) return false;
+    
+    // 3. On Web or Desktop platforms, if screen is wide enough, show PC UI
     if (kIsWeb) return true;
     
     try {
       if (Platform.isWindows || Platform.isMacOS || Platform.isLinux) return true;
     } catch (_) {
-      // If Platform check fails (some web edge cases), fallback to width only
+      // Fallback
     }
 
-    // Default for tablets/large screens on mobile OS
+    // Default for large screens on native mobile OS (e.g. iPad native app)
     return MediaQuery.of(context).size.width > AppConstants.breakpointMobile;
   }
 
