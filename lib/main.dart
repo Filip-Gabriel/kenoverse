@@ -42,4 +42,3 @@ class Kenoverse extends StatelessWidget {
     );
   }
 }
-// todo make it so that the app will download song and update its internal database from firebase when it connects to the internet
